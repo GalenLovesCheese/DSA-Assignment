@@ -16,7 +16,7 @@ public:
     }
 };
 
-template <typename KeyType, typename ValueType, int ORDER = 128>
+template <typename KeyType, typename ValueType, int ORDER = 8>  // TODO: Change order size
 class BPlusTree
 {
 private:

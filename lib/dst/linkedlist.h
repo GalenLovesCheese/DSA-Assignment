@@ -35,7 +35,7 @@ public:
         Node *current = other.head;
         while (current)
         {
-            pushBack(current->data);
+            push_back(current->data);
             current = current->next;
         }
     }
@@ -52,7 +52,7 @@ public:
             Node *current = other.head;
             while (current)
             {
-                pushBack(current->data);
+                push_back(current->data);
                 current = current->next;
             }
         }
