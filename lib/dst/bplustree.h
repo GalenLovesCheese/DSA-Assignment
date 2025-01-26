@@ -16,7 +16,7 @@ public:
     }
 };
 
-template <typename KeyType, typename ValueType, int ORDER = 8>  // TODO: Change order size
+template <typename KeyType, typename ValueType, int ORDER = 8> // TODO: Change order size
 class BPlusTree
 {
 private:
@@ -256,15 +256,73 @@ public:
         return search_recursive(root, key);
     }
 
-    // Range query (returns first leaf node)
-    Node *get_first_leaf() const
+    // Range query iterator
+    class RangeIterator
     {
+    private:
+        typename BPlusTree<KeyType, ValueType, ORDER>::Node *current_leaf;
+        int current_index;
+        KeyType end_key;
+
+    public:
+        RangeIterator(typename BPlusTree<KeyType, ValueType, ORDER>::Node *leaf,
+                      int index, const KeyType &end)
+            : current_leaf(leaf), current_index(index), end_key(end) {}
+
+        // Check if iterator is valid
+        bool has_next() const
+        {
+            return current_leaf != nullptr &&
+                   current_index < current_leaf->key_count &&
+                   !Compare<KeyType>::less(end_key, current_leaf->keys[current_index]);
+        }
+
+        // Get current value and advance
+        ValueType *next()
+        {
+            if (!has_next())
+                return nullptr;
+
+            ValueType *result = current_leaf->values[current_index];
+            current_index++;
+
+            // Move to next leaf if needed
+            if (current_index >= current_leaf->key_count)
+            {
+                current_leaf = current_leaf->next_leaf;
+                current_index = 0;
+            }
+
+            return result;
+        }
+    };
+
+    // Range query method
+    RangeIterator range_query(const KeyType &start, const KeyType &end) const
+    {
+        // Find the first leaf node that might contain start key
         Node *current = root;
         while (!current->is_leaf)
         {
-            current = current->children[0];
+            int i = 0;
+            while (i < current->key_count &&
+                   Compare<KeyType>::less(current->keys[i], start))
+            {
+                i++;
+            }
+            current = current->children[i];
         }
-        return current;
+
+        // Find first key >= start
+        int start_index = 0;
+        while (start_index < current->key_count &&
+               Compare<KeyType>::less(current->keys[start_index], start))
+        {
+            start_index++;
+        }
+
+        // Return iterator at first valid point
+        return RangeIterator(current, start_index, end);
     }
 };
 
