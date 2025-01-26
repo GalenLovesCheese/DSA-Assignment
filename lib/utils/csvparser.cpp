@@ -2,6 +2,7 @@
 
 #include "classes/actor.h"
 #include "classes/movie.h"
+#include "classes/actor-movie.h"
 
 #include <cstring>
 
@@ -109,3 +110,6 @@ template void CSVParser::FreeResults<Actor>(Actor*, size_t);
 
 template Movie* CSVParser::Parse<Movie>(const char*, size_t*);
 template void CSVParser::FreeResults<Movie>(Movie*, size_t);
+
+template ActorMovie* CSVParser::Parse<ActorMovie>(const char*, size_t*);
+template void CSVParser::FreeResults<ActorMovie>(ActorMovie*, size_t);

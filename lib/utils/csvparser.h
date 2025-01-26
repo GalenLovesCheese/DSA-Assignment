@@ -35,11 +35,15 @@ namespace CSVParser {
 
 struct Actor;
 struct Movie;
+struct ActorMovie;
 
 extern template Actor* CSVParser::Parse<Actor>(const char*, size_t*);
 extern template void CSVParser::FreeResults<Actor>(Actor*, size_t);
 
 extern template Movie* CSVParser::Parse<Movie>(const char*, size_t*);
 extern template void CSVParser::FreeResults<Movie>(Movie*, size_t);
+
+extern template ActorMovie* CSVParser::Parse<ActorMovie>(const char*, size_t*);
+extern template void CSVParser::FreeResults<ActorMovie>(ActorMovie*, size_t);
 
 #endif // CSV_PARSER_H
