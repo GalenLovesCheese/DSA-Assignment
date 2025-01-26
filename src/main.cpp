@@ -10,12 +10,22 @@
 
 #include "utils/debug.h"
 
+// Function prototypes
 void populate_main_hashmap(HashMap<int, Actor> *actor_map, HashMap<int, Movie> *movie_map, Actor *actors, Movie *movies, size_t actor_count, size_t movie_count);
 void populate_index_trees(BPlusTree<std::string, int> *actor_name_index, BPlusTree<int, int> *actor_year_index, BPlusTree<int, int> *movie_year_index, Actor *actors, Movie *movies, size_t actor_count, size_t movie_count);
 void populate_relation_hashmaps(HashMap<int, LinkedList<int>> *actor_movies, HashMap<int, LinkedList<int>> *movie_actors, ActorMovie *actor_movies_csv, size_t actor_movie_count);
 
+void admin_handler(int input);
+
+void user_handler(int input);
+
+void display_actor_age(BPlusTree<int, int> *actor_year_index, HashMap<int, Actor> *actor_map);
+
 int main()
 {
+    // Variables
+    bool admin = false;
+
     // Load data from CSV files
     size_t actor_count, movie_count, actor_movie_count;
     Actor *actors = CSVParser::Parse<Actor>("data/actors.csv", &actor_count);
@@ -38,41 +48,77 @@ int main()
     populate_index_trees(actor_name_index, actor_year_index, movie_year_index, actors, movies, actor_count, movie_count);
     populate_relation_hashmaps(actor_movies, movie_actors, actor_movies_csv, actor_movie_count);
 
-    // Frontend
-    int input = -1;
-    while (input != 0)
+    // Main user interface loop
+    int input = 0;
+    do
     {
-        std::cout << "1. Display actors with age within `x` and `y`" << std::endl;
-        std::cout << "0. Exit" << std::endl;
+        std::cout << "========== Movie App by Bowen & Galen ==========" << std::endl;
+        std::cout << "1. Display actors between a certain age range" << std::endl;
+        std::cout << "2. Display movies released within the past 3 years" << std::endl;
+        std::cout << "3. Display all movies an actor starred in" << std::endl;
+        std::cout << "4. Display all actors in a movie" << std::endl;
+        std::cout << "5. Display all actors that an actor knows" << std::endl;
 
-        std::cout << "Enter your choice: ";
+        if (admin)
+        {
+            std::cout << "========== Admin Commands ==========" << std::endl;
+            std::cout << "6. Add a new actor" << std::endl;
+            std::cout << "7. Add a new movie" << std::endl;
+            std::cout << "8. Add a new actor to a movie" << std::endl;
+            std::cout << "9. Update actor details" << std::endl;
+            std::cout << "10. Update movie details" << std::endl;
+        }
+
+        std::cout << "\nChoice (Type '0' to quit): ";
         std::cin >> input;
 
-        switch (input)
-        case 1:
+        if (input >= 6 && input <= 10 && admin)
         {
-            int year_min, year_max;
-            std::cout << "Enter min year: ";
-            std::cin >> year_min;
-            std::cout << "Enter max year: ";
-            std::cin >> year_max;
-
-            BPlusTree<int, int>::RangeIterator it = actor_year_index->range_query(year_min, year_max);
-            while (it.has_next())
-            {
-                int actor_id = *it.next();
-                Actor* actor = actor_map->get(actor_id);
-                std::cout << actor->name << " (" << actor->year << ")" << std::endl;
-            }
+            admin_handler(input);
         }
-        break;
-    }
+        else if (input >= 1 && input <= 5)
+        {
+            user_handler(input);
+        }
+        else if (input == 0)
+        {
+            std::cout << "Exiting..." << std::endl;
+        }
+        else
+        {
+            std::cout << "Invalid input. Please try again." << std::endl;
+        }
+
+        std::cout << std::endl;
+    } while (input != 0);
 
     // DO NOT REMOVE: Free up the memory
     CSVParser::FreeResults(actors, actor_count);
     CSVParser::FreeResults(movies, movie_count);
     return 0;
 }
+
+// ===============================
+// Assignment Functions (Admin)
+// ===============================
+
+void admin_handler(int input)
+{
+    // TODO: Implement admin handler
+}
+
+// ===============================
+// Assignment Functions (User)
+// ===============================
+
+void user_handler(int input)
+{
+    // TODO: Implement user handler
+}
+
+// ===============================
+// Helper functions
+// ===============================
 
 void populate_main_hashmap(HashMap<int, Actor> *actor_map, HashMap<int, Movie> *movie_map, Actor *actors, Movie *movies, size_t actor_count, size_t movie_count)
 {
