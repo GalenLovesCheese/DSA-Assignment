@@ -2,3 +2,5 @@
 *.pdf
 movieApp*
 .vscode/
+*.o
+*.d
