@@ -38,6 +38,8 @@ int main()
     populate_index_trees(actor_name_index, actor_year_index, movie_year_index, actors, movies, actor_count, movie_count);
     populate_relation_hashmaps(actor_movies, movie_actors, actor_movies_csv, actor_movie_count);
 
+    // TODO: Implement "frontend" (user input, function dispatch)
+
     // DO NOT REMOVE: Free up the memory
     CSVParser::FreeResults(actors, actor_count);
     CSVParser::FreeResults(movies, movie_count);
