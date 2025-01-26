@@ -38,7 +38,35 @@ int main()
     populate_index_trees(actor_name_index, actor_year_index, movie_year_index, actors, movies, actor_count, movie_count);
     populate_relation_hashmaps(actor_movies, movie_actors, actor_movies_csv, actor_movie_count);
 
-    // TODO: Implement "frontend" (user input, function dispatch)
+    // Frontend
+    int input = -1;
+    while (input != 0)
+    {
+        std::cout << "1. Display actors with age within `x` and `y`" << std::endl;
+        std::cout << "0. Exit" << std::endl;
+
+        std::cout << "Enter your choice: ";
+        std::cin >> input;
+
+        switch (input)
+        case 1:
+        {
+            int year_min, year_max;
+            std::cout << "Enter min year: ";
+            std::cin >> year_min;
+            std::cout << "Enter max year: ";
+            std::cin >> year_max;
+
+            BPlusTree<int, int>::RangeIterator it = actor_year_index->range_query(year_min, year_max);
+            while (it.has_next())
+            {
+                int actor_id = *it.next();
+                Actor* actor = actor_map->get(actor_id);
+                std::cout << actor->name << " (" << actor->year << ")" << std::endl;
+            }
+        }
+        break;
+    }
 
     // DO NOT REMOVE: Free up the memory
     CSVParser::FreeResults(actors, actor_count);
