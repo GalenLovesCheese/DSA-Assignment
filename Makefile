@@ -1,22 +1,31 @@
 CXX = g++
-CXXFLAGS = -I./lib --std=c++11
+CXXFLAGS = -I./lib --std=c++11 -MMD
 SRC = src/main.cpp
 LIBS = $(wildcard lib/**/*.cpp)
+OBJECTS = $(SRC:.cpp=.o) $(LIBS:.cpp=.o)
+DEPFILES = $(OBJECTS:.o=.d)
 TARGET = movieApp
 
-$(TARGET): $(SRC) $(LIBS)
+.PHONY: debug_vsc debug run clean
+
+$(TARGET): $(OBJECTS)
 	$(CXX) $(CXXFLAGS) $^ -o $@
 
-debug_vsc:
-	$(CXX) $(CXXFLAGS) -g $(SRC) $(LIBS) -o $(TARGET) -DDEBUG
+%.o: %.cpp
+	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-debug:
-	$(CXX) $(CXXFLAGS) -g $(SRC) $(LIBS) -o $(TARGET) -DDEBUG
+-include $(DEPFILES)
+
+debug_vsc: CXXFLAGS += -g -DDEBUG
+debug_vsc: $(TARGET)
+
+debug: CXXFLAGS += -g -DDEBUG
+debug: $(TARGET)
 	./$(TARGET)
 
 run: $(TARGET)
 	./$(TARGET)
 
 clean:
-	rm -f $(TARGET)
+	rm -f $(TARGET) $(OBJECTS) $(DEPFILES)
 	rm -rf *.dSYM
