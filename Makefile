@@ -1,5 +1,5 @@
 CXX = g++
-CXXFLAGS = -I./lib
+CXXFLAGS = -I./lib --std=c++11
 SRC = src/main.cpp
 LIBS = $(wildcard lib/**/*.cpp)
 TARGET = movieApp
