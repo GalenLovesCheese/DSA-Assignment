@@ -1,5 +1,6 @@
 #include <iostream>
 #include <string>
+#include <ctime>
 
 #include "dst/bplustree.h"
 #include "dst/hashmap.h"
@@ -10,14 +11,33 @@
 
 #include "utils/debug.h"
 
+// Global variables
+size_t actor_count, movie_count, actor_movie_count;
+Actor *actors;
+Movie *movies;
+ActorMovie *actor_movies_csv;
+
+HashMap<int, Actor> *actor_map;
+HashMap<int, Movie> *movie_map;
+
+BPlusTree<std::string, int> *actor_name_index;
+BPlusTree<int, int> *actor_year_index;
+BPlusTree<int, int> *movie_year_index;
+
+HashMap<int, LinkedList<int>> *actor_movies;
+HashMap<int, LinkedList<int>> *movie_actors;
+
 // Function prototypes
-void populate_main_hashmap(HashMap<int, Actor> *actor_map, HashMap<int, Movie> *movie_map, Actor *actors, Movie *movies, size_t actor_count, size_t movie_count);
-void populate_index_trees(BPlusTree<std::string, int> *actor_name_index, BPlusTree<int, int> *actor_year_index, BPlusTree<int, int> *movie_year_index, Actor *actors, Movie *movies, size_t actor_count, size_t movie_count);
-void populate_relation_hashmaps(HashMap<int, LinkedList<int>> *actor_movies, HashMap<int, LinkedList<int>> *movie_actors, ActorMovie *actor_movies_csv, size_t actor_movie_count);
+void populate_main_hashmap();
+void populate_index_trees();
+void populate_relation_hashmaps();
+
+int get_year();
 
 void admin_handler(int input);
 
 void user_handler(int input);
+void display_actor_age_range();
 
 void display_actor_age(BPlusTree<int, int> *actor_year_index, HashMap<int, Actor> *actor_map);
 
@@ -27,26 +47,25 @@ int main()
     bool admin = false;
 
     // Load data from CSV files
-    size_t actor_count, movie_count, actor_movie_count;
-    Actor *actors = CSVParser::Parse<Actor>("data/actors.csv", &actor_count);
-    Movie *movies = CSVParser::Parse<Movie>("data/movies.csv", &movie_count);
-    ActorMovie *actor_movies_csv = CSVParser::Parse<ActorMovie>("data/cast.csv", &actor_movie_count);
+    actors = CSVParser::Parse<Actor>("data/actors.csv", &actor_count);
+    movies = CSVParser::Parse<Movie>("data/movies.csv", &movie_count);
+    actor_movies_csv = CSVParser::Parse<ActorMovie>("data/cast.csv", &actor_movie_count);
 
     // Initialise main hashmap, index trees & relation hashmaps
-    HashMap<int, Actor> *actor_map = new HashMap<int, Actor>(actor_count);
-    HashMap<int, Movie> *movie_map = new HashMap<int, Movie>(movie_count);
+    actor_map = new HashMap<int, Actor>(actor_count);
+    movie_map = new HashMap<int, Movie>(movie_count);
 
-    BPlusTree<std::string, int> *actor_name_index = new BPlusTree<std::string, int>();
-    BPlusTree<int, int> *actor_year_index = new BPlusTree<int, int>();
-    BPlusTree<int, int> *movie_year_index = new BPlusTree<int, int>();
+    actor_name_index = new BPlusTree<std::string, int>();
+    actor_year_index = new BPlusTree<int, int>();
+    movie_year_index = new BPlusTree<int, int>();
 
-    HashMap<int, LinkedList<int>> *actor_movies = new HashMap<int, LinkedList<int>>();
-    HashMap<int, LinkedList<int>> *movie_actors = new HashMap<int, LinkedList<int>>();
+    actor_movies = new HashMap<int, LinkedList<int>>();
+    movie_actors = new HashMap<int, LinkedList<int>>();
 
     // Populate main hashmap, index trees & relation hashmaps
-    populate_main_hashmap(actor_map, movie_map, actors, movies, actor_count, movie_count);
-    populate_index_trees(actor_name_index, actor_year_index, movie_year_index, actors, movies, actor_count, movie_count);
-    populate_relation_hashmaps(actor_movies, movie_actors, actor_movies_csv, actor_movie_count);
+    populate_main_hashmap();
+    populate_index_trees();
+    populate_relation_hashmaps();
 
     // Main user interface loop
     int input = 0;
@@ -113,14 +132,44 @@ void admin_handler(int input)
 
 void user_handler(int input)
 {
-    // TODO: Implement user handler
+    switch (input)
+    {
+    case 1:
+        display_actor_age_range();
+        break;
+    default:
+        break;
+    }
+}
+
+void display_actor_age_range()
+{
+    int min_year, max_year, in;
+    int current_year = get_year();
+
+    std::cout << "Enter minimum age: ";
+    std::cin >> in;
+    max_year = current_year - in;
+
+    std::cout << "Enter maximum age: ";
+    std::cin >> in;
+    min_year = current_year - in;
+
+    auto it = actor_year_index->range_query(min_year, max_year);
+
+    std::cout << "Actors born between " << min_year << " and " << max_year << ":" << std::endl;
+    while (it.has_next())
+    {
+        Actor *actor = actor_map->get(*it.next());
+        std::cout << actor->name << " (" << actor->year << ")" << std::endl;
+    }
 }
 
 // ===============================
 // Helper functions
 // ===============================
 
-void populate_main_hashmap(HashMap<int, Actor> *actor_map, HashMap<int, Movie> *movie_map, Actor *actors, Movie *movies, size_t actor_count, size_t movie_count)
+void populate_main_hashmap()
 {
     // Populate main hashmap
     for (size_t i = 0; i < actor_count; i++)
@@ -133,7 +182,7 @@ void populate_main_hashmap(HashMap<int, Actor> *actor_map, HashMap<int, Movie> *
     }
 }
 
-void populate_index_trees(BPlusTree<std::string, int> *actor_name_index, BPlusTree<int, int> *actor_year_index, BPlusTree<int, int> *movie_year_index, Actor *actors, Movie *movies, size_t actor_count, size_t movie_count)
+void populate_index_trees()
 {
     // Populate index trees
     for (size_t i = 0; i < actor_count; i++)
@@ -147,7 +196,7 @@ void populate_index_trees(BPlusTree<std::string, int> *actor_name_index, BPlusTr
     }
 }
 
-void populate_relation_hashmaps(HashMap<int, LinkedList<int>> *actor_movies, HashMap<int, LinkedList<int>> *movie_actors, ActorMovie *actor_movies_csv, size_t actor_movie_count)
+void populate_relation_hashmaps()
 {
     // Populate relation hashmaps
     for (size_t i = 0; i < actor_movie_count; i++)
@@ -178,4 +227,11 @@ void populate_relation_hashmaps(HashMap<int, LinkedList<int>> *actor_movies, Has
             movie_actors_list->push_back(actor_movies_csv[i].actor_id);
         }
     }
+}
+
+int get_year()
+{
+    std::time_t t = std::time(0);
+    std::tm *now = std::localtime(&t);
+    return now->tm_year + 1900;
 }
