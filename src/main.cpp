@@ -4,6 +4,7 @@
 
 #include "dst/bplustree.h"
 #include "dst/hashmap.h"
+#include "dst/avl.h"
 
 #include "classes/actor.h"
 #include "classes/movie.h"
@@ -20,12 +21,13 @@ ActorMovie *actor_movies_csv;
 HashMap<int, Actor> *actor_map;
 HashMap<int, Movie> *movie_map;
 
-BPlusTree<std::string, int> *actor_name_index;
+BPlusTree<const char *, int> *actor_name_index;
+BPlusTree<const char *, int> *movie_name_index;
 BPlusTree<int, int> *actor_year_index;
 BPlusTree<int, int> *movie_year_index;
 
-HashMap<int, LinkedList<int>> *actor_movies;
-HashMap<int, LinkedList<int>> *movie_actors;
+HashMap<int, AVLTree<const char *>> *actor_movies;
+HashMap<int, AVLTree<const char *>> *movie_actors;
 
 // Function prototypes
 void populate_main_hashmap();
@@ -39,8 +41,7 @@ void admin_handler(int input);
 void user_handler(int input);
 void display_actor_age_range();
 void display_recent_movies();
-
-void display_actor_age(BPlusTree<int, int> *actor_year_index, HashMap<int, Actor> *actor_map);
+void display_actor_movies();
 
 int main()
 {
@@ -56,12 +57,14 @@ int main()
     actor_map = new HashMap<int, Actor>(actor_count);
     movie_map = new HashMap<int, Movie>(movie_count);
 
-    actor_name_index = new BPlusTree<std::string, int>();
+    actor_name_index = new BPlusTree<const char *, int>();
+    movie_name_index = new BPlusTree<const char *, int>();
+
     actor_year_index = new BPlusTree<int, int>();
     movie_year_index = new BPlusTree<int, int>();
 
-    actor_movies = new HashMap<int, LinkedList<int>>();
-    movie_actors = new HashMap<int, LinkedList<int>>();
+    actor_movies = new HashMap<int, AVLTree<const char *>>();
+    movie_actors = new HashMap<int, AVLTree<const char *>>();
 
     // Populate main hashmap, index trees & relation hashmaps
     populate_main_hashmap();
@@ -141,6 +144,9 @@ void user_handler(int input)
     case 2:
         display_recent_movies();
         break;
+    case 3:
+        display_actor_movies();
+        break;
     default:
         break;
     }
@@ -162,10 +168,12 @@ void display_actor_age_range()
     auto it = actor_year_index->range_query(min_year, max_year);
 
     std::cout << "Actors born between " << min_year << " and " << max_year << ":" << std::endl;
+    int i = 1;
     while (it.has_next())
     {
         Actor *actor = actor_map->get(*it.next());
-        std::cout << actor->name << " (" << actor->year << ")" << std::endl;
+        std::cout << i << ". " << actor->name << " (" << actor->year << ")" << std::endl;
+        i++;
     }
 }
 
@@ -175,10 +183,55 @@ void display_recent_movies()
     auto it = movie_year_index->range_query(current_year - 3, current_year);
 
     std::cout << "Movies released in the past 3 years:" << std::endl;
+
+    if (!it.has_next())
+    {
+        std::cout << "No movies found." << std::endl;
+        return;
+    }
+
+    int i = 1;
     while (it.has_next())
     {
         Movie *movie = movie_map->get(*it.next());
-        std::cout << movie->title << " (" << movie->year << ")" << std::endl;
+        std::cout << i << ". " << movie->title << " (" << movie->year << ")" << std::endl;
+        i++;
+    }
+}
+
+void display_actor_movies()
+{
+    std::string name;
+    std::cout << "Enter actor name: ";
+    std::cin.ignore();
+    std::getline(std::cin, name);
+
+    const char *name_data = name.c_str();
+    int *actor_id = actor_name_index->search(name_data);
+    if (actor_id == nullptr)
+    {
+        std::cout << "Actor not found." << std::endl;
+        return;
+    }
+
+    AVLTree<const char *> *movies = actor_movies->get(*actor_id);
+    if (movies == nullptr)
+    {
+        std::cout << "Actor has no movies." << std::endl;
+        return;
+    }
+
+    std::cout << "Movies starring " << name << ":" << std::endl;
+    auto it = movies->begin();
+    int i = 1;
+    while (it.has_next())
+    {
+        const char *movie_name = *it;
+        int *movie_id = movie_name_index->search(movie_name);
+        Movie *movie = movie_map->get(*movie_id);
+        std::cout << i << ". " << movie->title << " (" << movie->year << ")" << std::endl;
+        ++it;
+        i++;
     }
 }
 
@@ -209,40 +262,34 @@ void populate_index_trees()
     }
     for (size_t i = 0; i < movie_count; i++)
     {
+        movie_name_index->insert(movies[i].title, movies[i].id);
         movie_year_index->insert(movies[i].year, movies[i].id);
     }
 }
 
 void populate_relation_hashmaps()
 {
-    // Populate relation hashmaps
     for (size_t i = 0; i < actor_movie_count; i++)
     {
-        // Handle actor_movies hashmap
-        LinkedList<int> *actor_movies_list = actor_movies->get(actor_movies_csv[i].actor_id);
-        if (actor_movies_list == nullptr)
-        {
-            LinkedList<int> new_list;
-            new_list.push_back(actor_movies_csv[i].movie_id);
-            actor_movies->insert(actor_movies_csv[i].actor_id, new_list);
-        }
-        else
-        {
-            actor_movies_list->push_back(actor_movies_csv[i].movie_id);
-        }
+        ActorMovie *actor_movie = &actor_movies_csv[i];
+        Actor *actor = actor_map->get(actor_movie->actor_id);
+        Movie *movie = movie_map->get(actor_movie->movie_id);
 
-        // Handle movie_actors hashmap
-        LinkedList<int> *movie_actors_list = movie_actors->get(actor_movies_csv[i].movie_id);
-        if (movie_actors_list == nullptr)
+        AVLTree<const char *> *movies = actor_movies->get(actor->id);
+        if (!movies)
         {
-            LinkedList<int> new_list;
-            new_list.push_back(actor_movies_csv[i].actor_id);
-            movie_actors->insert(actor_movies_csv[i].movie_id, new_list);
+            actor_movies->insert(actor->id, AVLTree<const char *>());
+            movies = actor_movies->get(actor->id);
         }
-        else
+        movies->insert(movie->title);
+
+        AVLTree<const char *> *actors = movie_actors->get(movie->id);
+        if (!actors)
         {
-            movie_actors_list->push_back(actor_movies_csv[i].actor_id);
+            movie_actors->insert(movie->id, AVLTree<const char *>());
+            actors = movie_actors->get(movie->id);
         }
+        actors->insert(actor->name);
     }
 }
 

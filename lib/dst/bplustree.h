@@ -16,6 +16,20 @@ public:
     }
 };
 
+template <>
+class Compare<const char *>
+{
+public:
+    static bool less(const char *a, const char *b)
+    {
+        return strcmp(a, b) < 0;
+    }
+    static bool equal(const char *a, const char *b)
+    {
+        return strcmp(a, b) == 0;
+    }
+};
+
 template <typename KeyType, typename ValueType, int ORDER = 8> // TODO: Change order size
 class BPlusTree
 {
