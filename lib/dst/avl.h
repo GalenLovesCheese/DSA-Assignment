@@ -1,6 +1,8 @@
 #include <cstddef>
+#include <cstring>
+#include <functional>
 
-template <typename T>
+template <typename T, typename Compare = std::less<T>>
 class AVLTree
 {
 private:
@@ -16,6 +18,7 @@ private:
 
     Node *root;
     size_t tree_size;
+    Compare comp;
 
     int get_height(Node *node)
     {
@@ -79,14 +82,13 @@ private:
             return new Node(value);
         }
 
-        // Avoid comparisons if values are equal
-        if (!(value < node->data) && !(node->data < value))
+        if (!comp(value, node->data) && !comp(node->data, value))
         {
             inserted = false;
-            return node; // Duplicate value
+            return node;
         }
 
-        if (value < node->data)
+        if (comp(value, node->data))
         {
             node->left = insert_internal(node->left, value, inserted);
         }
@@ -96,33 +98,29 @@ private:
         }
 
         if (!inserted)
-            return node; // If no insertion happened, no need to balance
+            return node;
 
         update_height(node);
 
         int balance = get_balance(node);
 
-        // Left Left Case
-        if (balance > 1 && value < node->left->data)
+        if (balance > 1 && comp(value, node->left->data))
         {
             return rotate_right(node);
         }
 
-        // Right Right Case
-        if (balance < -1 && node->right->data < value)
+        if (balance < -1 && comp(node->right->data, value))
         {
             return rotate_left(node);
         }
 
-        // Left Right Case
-        if (balance > 1 && node->left->data < value)
+        if (balance > 1 && comp(node->left->data, value))
         {
             node->left = rotate_left(node->left);
             return rotate_right(node);
         }
 
-        // Right Left Case
-        if (balance < -1 && value < node->right->data)
+        if (balance < -1 && comp(value, node->right->data))
         {
             node->right = rotate_right(node->right);
             return rotate_left(node);
@@ -148,11 +146,11 @@ private:
             return nullptr;
         }
 
-        if (value < node->data)
+        if (comp(value, node->data))
         {
             node->left = delete_internal(node->left, value, deleted);
         }
-        else if (node->data < value)
+        else if (comp(node->data, value))
         {
             node->right = delete_internal(node->right, value, deleted);
         }
@@ -184,32 +182,28 @@ private:
         if (!node)
             return nullptr;
         if (!deleted)
-            return node; // If no deletion happened, no need to balance
+            return node;
 
         update_height(node);
 
         int balance = get_balance(node);
 
-        // Left Left Case
         if (balance > 1 && get_balance(node->left) >= 0)
         {
             return rotate_right(node);
         }
 
-        // Left Right Case
         if (balance > 1 && get_balance(node->left) < 0)
         {
             node->left = rotate_left(node->left);
             return rotate_right(node);
         }
 
-        // Right Right Case
         if (balance < -1 && get_balance(node->right) <= 0)
         {
             return rotate_left(node);
         }
 
-        // Right Left Case
         if (balance < -1 && get_balance(node->right) > 0)
         {
             node->right = rotate_right(node->right);
@@ -288,33 +282,33 @@ public:
         }
     };
 
-    AVLTree() : root(nullptr), tree_size(0) {}
+    AVLTree() : root(nullptr), tree_size(0), comp() {}
+
+    explicit AVLTree(const Compare &cmp) : root(nullptr), tree_size(0), comp(cmp) {}
 
     ~AVLTree()
     {
         clear_internal(root);
     }
 
-    // Copy constructor
-    AVLTree(const AVLTree &other) : root(nullptr), tree_size(0)
+    AVLTree(const AVLTree &other) : root(nullptr), tree_size(0), comp(other.comp)
     {
         root = copyTree(other.root);
         tree_size = other.tree_size;
     }
 
-    // Assignment operator
     AVLTree &operator=(const AVLTree &other)
     {
         if (this != &other)
         {
             clear();
+            comp = other.comp;
             root = copyTree(other.root);
             tree_size = other.tree_size;
         }
         return *this;
     }
 
-    // Helper method to recursively copy nodes
     Node *copyTree(Node *node)
     {
         if (!node)
@@ -347,11 +341,11 @@ public:
         Node *current = root;
         while (current)
         {
-            if (value < current->data)
+            if (comp(value, current->data))
             {
                 current = current->left;
             }
-            else if (current->data < value)
+            else if (comp(current->data, value))
             {
                 current = current->right;
             }
@@ -383,5 +377,13 @@ public:
     Iterator begin()
     {
         return Iterator(root, tree_size);
+    }
+};
+
+struct CharPointerCompare
+{
+    bool operator()(const char *a, const char *b) const
+    {
+        return std::strcmp(a, b) < 0;
     }
 };

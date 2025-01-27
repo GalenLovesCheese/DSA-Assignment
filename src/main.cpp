@@ -26,8 +26,8 @@ BPlusTree<const char *, int> *movie_name_index;
 BPlusTree<int, int> *actor_year_index;
 BPlusTree<int, int> *movie_year_index;
 
-HashMap<int, AVLTree<const char *>> *actor_movies;
-HashMap<int, AVLTree<const char *>> *movie_actors;
+HashMap<int, AVLTree<const char *, CharPointerCompare>> *actor_movies;
+HashMap<int, AVLTree<const char *, CharPointerCompare>> *movie_actors;
 
 // Function prototypes
 void populate_main_hashmap();
@@ -42,6 +42,7 @@ void user_handler(int input);
 void display_actor_age_range();
 void display_recent_movies();
 void display_actor_movies();
+void display_movie_actors();
 
 int main()
 {
@@ -63,8 +64,8 @@ int main()
     actor_year_index = new BPlusTree<int, int>();
     movie_year_index = new BPlusTree<int, int>();
 
-    actor_movies = new HashMap<int, AVLTree<const char *>>();
-    movie_actors = new HashMap<int, AVLTree<const char *>>();
+    actor_movies = new HashMap<int, AVLTree<const char *, CharPointerCompare>>();
+    movie_actors = new HashMap<int, AVLTree<const char *, CharPointerCompare>>();
 
     // Populate main hashmap, index trees & relation hashmaps
     populate_main_hashmap();
@@ -147,6 +148,9 @@ void user_handler(int input)
     case 3:
         display_actor_movies();
         break;
+    case 4:
+        display_movie_actors();
+        break;
     default:
         break;
     }
@@ -214,7 +218,7 @@ void display_actor_movies()
         return;
     }
 
-    AVLTree<const char *> *movies = actor_movies->get(*actor_id);
+    AVLTree<const char *, CharPointerCompare> *movies = actor_movies->get(*actor_id);
     if (movies == nullptr)
     {
         std::cout << "Actor has no movies." << std::endl;
@@ -230,6 +234,42 @@ void display_actor_movies()
         int *movie_id = movie_name_index->search(movie_name);
         Movie *movie = movie_map->get(*movie_id);
         std::cout << i << ". " << movie->title << " (" << movie->year << ")" << std::endl;
+        ++it;
+        i++;
+    }
+}
+
+void display_movie_actors()
+{
+    std::string title;
+    std::cout << "Enter movie title: ";
+    std::cin.ignore();
+    std::getline(std::cin, title);
+
+    const char *title_data = title.c_str();
+    int *movie_id = movie_name_index->search(title_data);
+    if (movie_id == nullptr)
+    {
+        std::cout << "Movie not found." << std::endl;
+        return;
+    }
+
+    AVLTree<const char *, CharPointerCompare> *actors = movie_actors->get(*movie_id);
+    if (actors == nullptr)
+    {
+        std::cout << "Movie has no actors." << std::endl;
+        return;
+    }
+
+    std::cout << "Actors in " << title << ":" << std::endl;
+    auto it = actors->begin();
+    int i = 1;
+    while (it.has_next())
+    {
+        const char *actor_name = *it;
+        int *actor_id = actor_name_index->search(actor_name);
+        Actor *actor = actor_map->get(*actor_id);
+        std::cout << i << ". " << actor->name << " (" << actor->year << ")" << std::endl;
         ++it;
         i++;
     }
@@ -275,18 +315,18 @@ void populate_relation_hashmaps()
         Actor *actor = actor_map->get(actor_movie->actor_id);
         Movie *movie = movie_map->get(actor_movie->movie_id);
 
-        AVLTree<const char *> *movies = actor_movies->get(actor->id);
+        AVLTree<const char *, CharPointerCompare> *movies = actor_movies->get(actor->id);
         if (!movies)
         {
-            actor_movies->insert(actor->id, AVLTree<const char *>());
+            actor_movies->insert(actor->id, AVLTree<const char *, CharPointerCompare>());
             movies = actor_movies->get(actor->id);
         }
         movies->insert(movie->title);
 
-        AVLTree<const char *> *actors = movie_actors->get(movie->id);
+        AVLTree<const char *, CharPointerCompare> *actors = movie_actors->get(movie->id);
         if (!actors)
         {
-            movie_actors->insert(movie->id, AVLTree<const char *>());
+            movie_actors->insert(movie->id, AVLTree<const char *, CharPointerCompare>());
             actors = movie_actors->get(movie->id);
         }
         actors->insert(actor->name);
