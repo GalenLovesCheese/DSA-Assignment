@@ -38,6 +38,7 @@ void admin_handler(int input);
 
 void user_handler(int input);
 void display_actor_age_range();
+void display_recent_movies();
 
 void display_actor_age(BPlusTree<int, int> *actor_year_index, HashMap<int, Actor> *actor_map);
 
@@ -137,6 +138,9 @@ void user_handler(int input)
     case 1:
         display_actor_age_range();
         break;
+    case 2:
+        display_recent_movies();
+        break;
     default:
         break;
     }
@@ -162,6 +166,19 @@ void display_actor_age_range()
     {
         Actor *actor = actor_map->get(*it.next());
         std::cout << actor->name << " (" << actor->year << ")" << std::endl;
+    }
+}
+
+void display_recent_movies()
+{
+    int current_year = get_year();
+    auto it = movie_year_index->range_query(current_year - 3, current_year);
+
+    std::cout << "Movies released in the past 3 years:" << std::endl;
+    while (it.has_next())
+    {
+        Movie *movie = movie_map->get(*it.next());
+        std::cout << movie->title << " (" << movie->year << ")" << std::endl;
     }
 }
 
