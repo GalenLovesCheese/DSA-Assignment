@@ -2,11 +2,13 @@
 #define ACTOR_H
 
 #include "utils/csvparser.h"
+#include "dst/linkedlist.h"
 
 struct Actor {
     int id;
     char* name;
     int year;
+    LinkedList<int>* movies;
 };
 
 namespace CSVParser {

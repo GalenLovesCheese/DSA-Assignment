@@ -26,9 +26,6 @@ BPlusTree<const char *, int> *movie_name_index;
 BPlusTree<int, int> *actor_year_index;
 BPlusTree<int, int> *movie_year_index;
 
-HashMap<int, AVLTree<const char *, CharPointerCompare>> *actor_movies;
-HashMap<int, AVLTree<const char *, CharPointerCompare>> *movie_actors;
-
 // Function prototypes
 void populate_main_hashmap();
 void populate_index_trees();
@@ -64,13 +61,9 @@ int main()
     actor_year_index = new BPlusTree<int, int>();
     movie_year_index = new BPlusTree<int, int>();
 
-    actor_movies = new HashMap<int, AVLTree<const char *, CharPointerCompare>>();
-    movie_actors = new HashMap<int, AVLTree<const char *, CharPointerCompare>>();
-
     // Populate main hashmap, index trees & relation hashmaps
     populate_main_hashmap();
     populate_index_trees();
-    populate_relation_hashmaps();
 
     // Main user interface loop
     int input = 0;
@@ -218,24 +211,31 @@ void display_actor_movies()
         return;
     }
 
-    AVLTree<const char *, CharPointerCompare> *movies = actor_movies->get(*actor_id);
-    if (movies == nullptr)
+    Actor *actor = actor_map->get(*actor_id);
+    LinkedList<int> *movie_ids = actor->movies;
+    if (movie_ids == nullptr)
     {
         std::cout << "Actor has no movies." << std::endl;
         return;
     }
 
+    AVLTree<std::string> *movie_names = new AVLTree<std::string>();
+    for (auto it = movie_ids->begin(); it != movie_ids->end(); ++it)
+    {
+        Movie *movie = movie_map->get(*it);
+        std::string movie_name = movie->title;
+        movie_name += " (" + std::to_string(movie->year) + ")";
+        movie_names->insert(movie_name);
+    }
+
     std::cout << "Movies starring " << name << ":" << std::endl;
-    auto it = movies->begin();
     int i = 1;
+    auto it = movie_names->begin();
     while (it.has_next())
     {
-        const char *movie_name = *it;
-        int *movie_id = movie_name_index->search(movie_name);
-        Movie *movie = movie_map->get(*movie_id);
-        std::cout << i << ". " << movie->title << " (" << movie->year << ")" << std::endl;
-        ++it;
+        std::cout << i << ". " << *it << std::endl;
         i++;
+        ++it;
     }
 }
 
@@ -254,24 +254,31 @@ void display_movie_actors()
         return;
     }
 
-    AVLTree<const char *, CharPointerCompare> *actors = movie_actors->get(*movie_id);
-    if (actors == nullptr)
+    Movie *movie = movie_map->get(*movie_id);
+    LinkedList<int> *actor_ids = movie->actors;
+    if (actor_ids == nullptr)
     {
         std::cout << "Movie has no actors." << std::endl;
         return;
     }
 
+    AVLTree<std::string> *actor_names = new AVLTree<std::string>();
+    for (auto it = actor_ids->begin(); it != actor_ids->end(); ++it)
+    {
+        Actor *actor = actor_map->get(*it);
+        std::string actor_name = actor->name;
+        actor_name += " (" + std::to_string(actor->year) + ")";
+        actor_names->insert(actor_name);
+    }
+
     std::cout << "Actors in " << title << ":" << std::endl;
-    auto it = actors->begin();
     int i = 1;
+    auto it = actor_names->begin();
     while (it.has_next())
     {
-        const char *actor_name = *it;
-        int *actor_id = actor_name_index->search(actor_name);
-        Actor *actor = actor_map->get(*actor_id);
-        std::cout << i << ". " << actor->name << " (" << actor->year << ")" << std::endl;
-        ++it;
+        std::cout << i << ". " << *it << std::endl;
         i++;
+        ++it;
     }
 }
 
@@ -284,10 +291,26 @@ void populate_main_hashmap()
     // Populate main hashmap
     for (size_t i = 0; i < actor_count; i++)
     {
+        actors[i].movies = new LinkedList<int>();
+        for (size_t j = 0; j < actor_movie_count; j++)
+        {
+            if (actor_movies_csv[j].actor_id == actors[i].id)
+            {
+                actors[i].movies->push_back(actor_movies_csv[j].movie_id);
+            }
+        }
         actor_map->insert(actors[i].id, actors[i]);
     }
     for (size_t i = 0; i < movie_count; i++)
     {
+        movies[i].actors = new LinkedList<int>();
+        for (size_t j = 0; j < actor_movie_count; j++)
+        {
+            if (actor_movies_csv[j].movie_id == movies[i].id)
+            {
+                movies[i].actors->push_back(actor_movies_csv[j].actor_id);
+            }
+        }
         movie_map->insert(movies[i].id, movies[i]);
     }
 }
@@ -304,32 +327,6 @@ void populate_index_trees()
     {
         movie_name_index->insert(movies[i].title, movies[i].id);
         movie_year_index->insert(movies[i].year, movies[i].id);
-    }
-}
-
-void populate_relation_hashmaps()
-{
-    for (size_t i = 0; i < actor_movie_count; i++)
-    {
-        ActorMovie *actor_movie = &actor_movies_csv[i];
-        Actor *actor = actor_map->get(actor_movie->actor_id);
-        Movie *movie = movie_map->get(actor_movie->movie_id);
-
-        AVLTree<const char *, CharPointerCompare> *movies = actor_movies->get(actor->id);
-        if (!movies)
-        {
-            actor_movies->insert(actor->id, AVLTree<const char *, CharPointerCompare>());
-            movies = actor_movies->get(actor->id);
-        }
-        movies->insert(movie->title);
-
-        AVLTree<const char *, CharPointerCompare> *actors = movie_actors->get(movie->id);
-        if (!actors)
-        {
-            movie_actors->insert(movie->id, AVLTree<const char *, CharPointerCompare>());
-            actors = movie_actors->get(movie->id);
-        }
-        actors->insert(actor->name);
     }
 }
 
