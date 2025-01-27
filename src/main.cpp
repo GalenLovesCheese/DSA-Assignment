@@ -31,6 +31,8 @@ void populate_main_hashmap();
 void populate_index_trees();
 void populate_relation_hashmaps();
 
+AVLTree<std::string> *get_actor_relations(int actor_id, int depth, const std::string &original_name, AVLTree<std::string> *visited = nullptr);
+
 int get_year();
 
 void admin_handler(int input);
@@ -40,6 +42,7 @@ void display_actor_age_range();
 void display_recent_movies();
 void display_actor_movies();
 void display_movie_actors();
+void display_actor_relations();
 
 int main()
 {
@@ -143,6 +146,9 @@ void user_handler(int input)
         break;
     case 4:
         display_movie_actors();
+        break;
+    case 5:
+        display_actor_relations();
         break;
     default:
         break;
@@ -282,9 +288,99 @@ void display_movie_actors()
     }
 }
 
+void display_actor_relations()
+{
+    std::string actor_name;
+    std::cout << "Enter actor name: ";
+    std::cin.ignore();
+    std::getline(std::cin, actor_name);
+
+    const char *actor_name_data = actor_name.c_str();
+    int *actor_id = actor_name_index->search(actor_name_data);
+
+    if (actor_id == nullptr)
+    {
+        std::cout << "Actor not found." << std::endl;
+        return;
+    }
+
+    Actor *actor = actor_map->get(*actor_id);
+    LinkedList<int> *actor_movies = actor->movies;
+    if (actor_movies == nullptr)
+    {
+        std::cout << "Actor has no movies." << std::endl;
+        return;
+    }
+
+    std::string formatted_actor_name = actor_name;
+    formatted_actor_name += " (" + std::to_string(actor->year) + ")";
+    AVLTree<std::string> *actor_names = get_actor_relations(*actor_id, 2, formatted_actor_name);
+
+    std::cout << "Actors who have worked with " << actor_name << ":" << std::endl;
+    int i = 1;
+    auto it = actor_names->begin();
+    while (it.has_next())
+    {
+        std::cout << i << ". " << *it << std::endl;
+        i++;
+        ++it;
+    }
+}
+
 // ===============================
 // Helper functions
 // ===============================
+
+AVLTree<std::string> *get_actor_relations(int actor_id, int depth, const std::string &original_name, AVLTree<std::string> *visited)
+{
+    if (depth <= 0)
+        return nullptr;
+    if (visited == nullptr)
+        visited = new AVLTree<std::string>();
+
+    AVLTree<std::string> *actor_names = new AVLTree<std::string>();
+    Actor *actor = actor_map->get(actor_id);
+
+    LinkedList<int> *actor_movies = actor->movies;
+    if (actor_movies == nullptr)
+        return actor_names;
+
+    for (auto it = actor_movies->begin(); it != actor_movies->end(); ++it)
+    {
+        Movie *movie = movie_map->get(*it);
+        LinkedList<int> *movie_actors = movie->actors;
+
+        for (auto it2 = movie_actors->begin(); it2 != movie_actors->end(); ++it2)
+        {
+            if (*it2 != actor_id)
+            {
+                Actor *other_actor = actor_map->get(*it2);
+                std::string actor_name = other_actor->name;
+                actor_name += " (" + std::to_string(other_actor->year) + ")";
+
+                // Skip if it's the original actor or already visited
+                if (actor_name != original_name && !visited->contains(actor_name))
+                {
+                    actor_names->insert(actor_name);
+                    visited->insert(actor_name);
+
+                    AVLTree<std::string> *deeper_relations = get_actor_relations(*it2, depth - 1, original_name, visited);
+                    if (deeper_relations != nullptr)
+                    {
+                        auto deeper_it = deeper_relations->begin();
+                        while (deeper_it.has_next())
+                        {
+                            actor_names->insert(*deeper_it);
+                            ++deeper_it;
+                        }
+                        delete deeper_relations;
+                    }
+                }
+            }
+        }
+    }
+    return actor_names;
+}
 
 void populate_main_hashmap()
 {
