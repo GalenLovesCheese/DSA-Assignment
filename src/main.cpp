@@ -31,7 +31,7 @@ void populate_main_hashmap();
 void populate_index_trees();
 void populate_relation_hashmaps();
 
-AVLTree<std::string> *get_actor_relations(int actor_id, int depth, const std::string &original_name, AVLTree<std::string> *visited = nullptr);
+AVLTree<std::string> *get_actor_relations(int actor_id, int depth, const std::string &original_name);
 
 int get_year();
 
@@ -331,12 +331,10 @@ void display_actor_relations()
 // Helper functions
 // ===============================
 
-AVLTree<std::string> *get_actor_relations(int actor_id, int depth, const std::string &original_name, AVLTree<std::string> *visited)
+AVLTree<std::string> *get_actor_relations(int actor_id, int depth, const std::string &original_name)
 {
     if (depth <= 0)
         return nullptr;
-    if (visited == nullptr)
-        visited = new AVLTree<std::string>();
 
     AVLTree<std::string> *actor_names = new AVLTree<std::string>();
     Actor *actor = actor_map->get(actor_id);
@@ -359,12 +357,11 @@ AVLTree<std::string> *get_actor_relations(int actor_id, int depth, const std::st
                 actor_name += " (" + std::to_string(other_actor->year) + ")";
 
                 // Skip if it's the original actor or already visited
-                if (actor_name != original_name && !visited->contains(actor_name))
+                if (actor_name != original_name)
                 {
                     actor_names->insert(actor_name);
-                    visited->insert(actor_name);
 
-                    AVLTree<std::string> *deeper_relations = get_actor_relations(*it2, depth - 1, original_name, visited);
+                    AVLTree<std::string> *deeper_relations = get_actor_relations(*it2, depth - 1, original_name);
                     if (deeper_relations != nullptr)
                     {
                         auto deeper_it = deeper_relations->begin();
