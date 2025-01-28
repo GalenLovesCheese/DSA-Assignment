@@ -1,6 +1,8 @@
 #ifndef BPLUSTREE_H
 #define BPLUSTREE_H
 
+#include <cstring>
+
 // Forward declaration to allow template specialization for comparisons
 template <typename T>
 class Compare
