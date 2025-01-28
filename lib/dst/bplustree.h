@@ -208,7 +208,7 @@ private:
 
         // Find appropriate child
         int i = 0;
-        while (i < node->key_count && Compare<KeyType>::less(node->keys[i], key))
+        while (i < node->key_count && (Compare<KeyType>::less(node->keys[i], key) || Compare<KeyType>::equal(node->keys[i], key)))
         {
             i++;
         }
