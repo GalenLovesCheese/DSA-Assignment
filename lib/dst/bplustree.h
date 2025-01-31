@@ -234,6 +234,183 @@ private:
         delete node;
     }
 
+    struct PathEntry {
+        Node* parent;
+        int index;
+        PathEntry* next;
+        PathEntry(Node* p, int i, PathEntry* n) : parent(p), index(i), next(n) {}
+    };
+
+    void borrow_from_left_leaf(Node* node, Node* left_sibling, Node* parent, int parent_key_index) {
+        // Move the last element of left_sibling to the front of node
+        node->key_count++;
+        for (int i = node->key_count - 1; i > 0; --i) {
+            node->keys[i] = node->keys[i - 1];
+            node->values[i] = node->values[i - 1];
+        }
+        node->keys[0] = left_sibling->keys[left_sibling->key_count - 1];
+        node->values[0] = left_sibling->values[left_sibling->key_count - 1];
+        left_sibling->key_count--;
+        parent->keys[parent_key_index] = node->keys[0];
+    }
+
+    void borrow_from_right_leaf(Node* node, Node* right_sibling, Node* parent, int parent_key_index) {
+        // Move the first element of right_sibling to the end of node
+        node->keys[node->key_count] = right_sibling->keys[0];
+        node->values[node->key_count] = right_sibling->values[0];
+        node->key_count++;
+        // Shift remaining elements in right_sibling
+        for (int i = 0; i < right_sibling->key_count - 1; ++i) {
+            right_sibling->keys[i] = right_sibling->keys[i + 1];
+            right_sibling->values[i] = right_sibling->values[i + 1];
+        }
+        right_sibling->key_count--;
+        parent->keys[parent_key_index] = right_sibling->keys[0];
+    }
+
+    void borrow_from_left_internal(Node* node, Node* left_sibling, Node* parent, int parent_key_index) {
+        // Take the last key from left_sibling and parent's key
+        node->key_count++;
+        for (int i = node->key_count - 1; i > 0; --i) {
+            node->keys[i] = node->keys[i - 1];
+        }
+        node->children[node->key_count] = node->children[node->key_count - 1];
+        for (int i = node->key_count - 1; i > 0; --i) {
+            node->children[i] = node->children[i - 1];
+        }
+        node->keys[0] = parent->keys[parent_key_index];
+        node->children[0] = left_sibling->children[left_sibling->key_count];
+        parent->keys[parent_key_index] = left_sibling->keys[left_sibling->key_count - 1];
+        left_sibling->key_count--;
+    }
+
+    void borrow_from_right_internal(Node* node, Node* right_sibling, Node* parent, int parent_key_index) {
+        // Take the first key from right_sibling and parent's key
+        node->keys[node->key_count] = parent->keys[parent_key_index];
+        node->children[node->key_count + 1] = right_sibling->children[0];
+        node->key_count++;
+        parent->keys[parent_key_index] = right_sibling->keys[0];
+        // Shift remaining elements in right_sibling
+        for (int i = 0; i < right_sibling->key_count - 1; ++i) {
+            right_sibling->keys[i] = right_sibling->keys[i + 1];
+        }
+        for (int i = 0; i < right_sibling->key_count; ++i) {
+            right_sibling->children[i] = right_sibling->children[i + 1];
+        }
+        right_sibling->key_count--;
+    }
+
+    void merge_leaves(Node* left, Node* right, Node* parent, int parent_key_index) {
+        // Copy all keys and values from right to left
+        for (int i = 0; i < right->key_count; ++i) {
+            left->keys[left->key_count + i] = right->keys[i];
+            left->values[left->key_count + i] = right->values[i];
+        }
+        left->key_count += right->key_count;
+        left->next_leaf = right->next_leaf;
+        delete right;
+        // Parent's key at parent_key_index is now redundant
+    }
+
+    void merge_internal_nodes(Node* left, Node* right, Node* parent, int parent_key_index) {
+        // Bring down the parent's key
+        left->keys[left->key_count] = parent->keys[parent_key_index];
+        left->key_count++;
+        // Copy keys and children from right to left
+        for (int i = 0; i < right->key_count; ++i) {
+            left->keys[left->key_count + i] = right->keys[i];
+            left->children[left->key_count + i] = right->children[i];
+        }
+        left->children[left->key_count + right->key_count] = right->children[right->key_count];
+        left->key_count += right->key_count;
+        delete right;
+    }
+
+    void handle_underflow(Node* node, PathEntry*& stack) {
+        while (node->key_count < MIN_KEYS) {
+            if (stack == nullptr) {
+                // Handle root underflow
+                if (node->key_count == 0 && !node->is_leaf) {
+                    root = node->children[0];
+                    delete node;
+                }
+                break;
+            }
+
+            Node* parent = stack->parent;
+            int index = stack->index;
+            PathEntry* old_entry = stack;
+            stack = stack->next;
+            delete old_entry;
+
+            Node* left_sibling = (index > 0) ? parent->children[index - 1] : nullptr;
+            Node* right_sibling = (index < parent->key_count) ? parent->children[index + 1] : nullptr;
+
+            // Try to borrow from left sibling
+            if (left_sibling && left_sibling->key_count > MIN_KEYS) {
+                if (node->is_leaf) {
+                    borrow_from_left_leaf(node, left_sibling, parent, index - 1);
+                } else {
+                    borrow_from_left_internal(node, left_sibling, parent, index - 1);
+                }
+                break;
+            }
+            // Try to borrow from right sibling
+            else if (right_sibling && right_sibling->key_count > MIN_KEYS) {
+                if (node->is_leaf) {
+                    borrow_from_right_leaf(node, right_sibling, parent, index);
+                } else {
+                    borrow_from_right_internal(node, right_sibling, parent, index);
+                }
+                break;
+            }
+            // Merge with sibling
+            else {
+                Node* merged_node;
+                if (left_sibling) {
+                    if (node->is_leaf) {
+                        merge_leaves(left_sibling, node, parent, index - 1);
+                    } else {
+                        merge_internal_nodes(left_sibling, node, parent, index - 1);
+                    }
+                    merged_node = left_sibling;
+                    // Remove the parent's key at index - 1
+                    for (int i = index - 1; i < parent->key_count - 1; ++i) {
+                        parent->keys[i] = parent->keys[i + 1];
+                    }
+                    for (int i = index; i < parent->key_count; ++i) {
+                        parent->children[i] = parent->children[i + 1];
+                    }
+                } else {
+                    if (node->is_leaf) {
+                        merge_leaves(node, right_sibling, parent, index);
+                    } else {
+                        merge_internal_nodes(node, right_sibling, parent, index);
+                    }
+                    merged_node = node;
+                    // Remove the parent's key at index
+                    for (int i = index; i < parent->key_count - 1; ++i) {
+                        parent->keys[i] = parent->keys[i + 1];
+                    }
+                    for (int i = index + 1; i < parent->key_count; ++i) {
+                        parent->children[i] = parent->children[i + 1];
+                    }
+                }
+                parent->key_count--;
+
+                if (parent->key_count >= MIN_KEYS || parent == root) {
+                    if (parent == root && parent->key_count == 0) {
+                        root = merged_node;
+                        delete parent;
+                    }
+                    break;
+                } else {
+                    node = parent;
+                }
+            }
+        }
+    }
+
 public:
     BPlusTree() : root(create_leaf_node()) {}
 
@@ -270,6 +447,81 @@ public:
     ValueType *search(const KeyType &key) const
     {
         return search_recursive(root, key);
+    }
+
+    // Remove a key-value pair
+    bool remove(const KeyType& key) {
+        PathEntry* stack = nullptr;
+        Node* current = root;
+        Node* parent = nullptr;
+        int index_in_parent = -1;
+
+        // Traverse to the leaf node
+        while (!current->is_leaf) {
+            int i = 0;
+            while (i < current->key_count && Compare<KeyType>::less(current->keys[i], key)) {
+                i++;
+            }
+            stack = new PathEntry(parent, index_in_parent, stack);
+            parent = current;
+            index_in_parent = i;
+            current = current->children[i];
+        }
+
+        // Find the key in the leaf node
+        int pos = -1;
+        for (int i = 0; i < current->key_count; ++i) {
+            if (Compare<KeyType>::equal(current->keys[i], key)) {
+                pos = i;
+                break;
+            }
+        }
+        if (pos == -1) {
+            // Cleanup stack
+            while (stack) {
+                PathEntry* temp = stack;
+                stack = stack->next;
+                delete temp;
+            }
+            return false;
+        }
+
+        // Delete the key from the leaf
+        delete current->values[pos];
+        for (int i = pos; i < current->key_count - 1; ++i) {
+            current->keys[i] = current->keys[i + 1];
+            current->values[i] = current->values[i + 1];
+        }
+        current->key_count--;
+
+        if (current == root) {
+            if (current->key_count == 0) {
+                delete root;
+                root = create_leaf_node();
+            }
+            // Cleanup stack
+            while (stack) {
+                PathEntry* temp = stack;
+                stack = stack->next;
+                delete temp;
+            }
+            return true;
+        }
+
+        // Check if underflow occurred
+        if (current->key_count < MIN_KEYS) {
+            stack = new PathEntry(parent, index_in_parent, stack);
+            handle_underflow(current, stack);
+        }
+
+        // Cleanup remaining stack
+        while (stack) {
+            PathEntry* temp = stack;
+            stack = stack->next;
+            delete temp;
+        }
+
+        return true;
     }
 
     // Range query iterator
