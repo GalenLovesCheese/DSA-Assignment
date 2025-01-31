@@ -457,7 +457,6 @@ void populate_main_hashmap()
 
 void populate_actor_indices()
 {
-    DEBUG_PRINTF("Populating actor indices...\n");
     std::thread t1(populate_actor_name_index);
     std::thread t2(populate_actor_year_index);
     t1.join();
@@ -466,7 +465,6 @@ void populate_actor_indices()
 
 void populate_actor_name_index()
 {
-    DEBUG_PRINTF("Populating actor name index...\n");
     for (size_t i = 0; i < actor_count; i++)
     {
         actor_name_index->insert(actors[i].name, actors[i].id);
@@ -475,7 +473,6 @@ void populate_actor_name_index()
 
 void populate_actor_year_index()
 {
-    DEBUG_PRINTF("Populating actor year index...\n");
     for (size_t i = 0; i < actor_count; i++)
     {
         actor_year_index->insert(actors[i].year, actors[i].id);
@@ -484,7 +481,6 @@ void populate_actor_year_index()
 
 void populate_movie_indices()
 {
-    DEBUG_PRINTF("Populating movie indices...\n");
     std::thread t1(populate_movie_name_index);
     std::thread t2(populate_movie_year_index);
     t1.join();
@@ -493,7 +489,6 @@ void populate_movie_indices()
 
 void populate_movie_name_index()
 {
-    DEBUG_PRINTF("Populating movie name index...\n");
     for (size_t i = 0; i < movie_count; i++)
     {
         movie_name_index->insert(movies[i].title, movies[i].id);
@@ -502,7 +497,6 @@ void populate_movie_name_index()
 
 void populate_movie_year_index()
 {
-    DEBUG_PRINTF("Populating movie year index...\n");
     for (size_t i = 0; i < movie_count; i++)
     {
         movie_year_index->insert(movies[i].year, movies[i].id);
