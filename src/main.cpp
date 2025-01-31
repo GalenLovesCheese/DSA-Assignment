@@ -366,7 +366,35 @@ void display_actor_relations()
     }
 }
 
-void display_add_new_actor() {}
+void display_add_new_actor() {
+    // actor details
+    std::string actor_name;
+    int dob;
+    int actor_id;
+
+    std::cout << "Enter name of new actor: ";
+    std::cin >> actor_name;
+    std::cout << "Enter the year of birth of " << actor_name << ": ";
+    std::cin >> dob;
+
+    actor_id = actor_map->getSize();
+
+    // make sure that ids are not duplicated
+    while(actor_map->get(actor_id)){
+        actor_id ++;
+    }
+    
+    Actor new_actor;
+    new_actor.name = new char[actor_name.length() + 1];
+    std::strcpy(new_actor.name, actor_name.c_str());
+    new_actor.id = actor_id;
+    new_actor.year = dob;
+    
+    actor_map->insert(actor_id, new_actor);
+    actor_name_index->insert(new_actor.name, actor_id);
+    actor_year_index->insert(dob, actor_id);
+    
+}
 void display_add_new_movie() {}
 void display_add_actor_to_movie() {}
 void display_update_actor_details() {}
