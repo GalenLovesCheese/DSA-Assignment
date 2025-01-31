@@ -32,7 +32,7 @@ public:
     }
 };
 
-template <typename KeyType, typename ValueType, int ORDER = 2048> // TODO: Change order size
+template <typename KeyType, typename ValueType, int ORDER = 4096>
 class BPlusTree
 {
 private:

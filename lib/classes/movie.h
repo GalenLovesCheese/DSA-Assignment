@@ -24,6 +24,7 @@ namespace CSVParser {
         
         static void free(Movie& obj) {
             ::free(obj.title);
+            ::free(obj.plot);
         }
     };
 }

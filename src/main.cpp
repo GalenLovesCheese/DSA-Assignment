@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 #include <ctime>
+#include <thread>
 
 #include "dst/bplustree.h"
 #include "dst/hashmap.h"
@@ -28,7 +29,12 @@ BPlusTree<int, int> *movie_year_index;
 
 // Function prototypes
 void populate_main_hashmap();
-void populate_index_trees();
+void populate_actor_indices();
+void populate_actor_name_index();
+void populate_actor_year_index();
+void populate_movie_name_index();
+void populate_movie_year_index();
+void populate_movie_indices();
 void populate_relation_hashmaps();
 
 AVLTree<std::string> *get_actor_relations(int actor_id, int depth, const std::string &original_name);
@@ -36,8 +42,8 @@ AVLTree<std::string> *get_actor_relations(int actor_id, int depth, const std::st
 int get_year();
 
 void admin_handler(int input);
-
 void user_handler(int input);
+
 void display_actor_age_range();
 void display_recent_movies();
 void display_actor_movies();
@@ -48,11 +54,23 @@ int main()
 {
     // Variables
     bool admin = false;
+    clock_t original_start = clock();
+    clock_t start = clock();
 
     // Load data from CSV files
     actors = CSVParser::Parse<Actor>("data/actors.csv", &actor_count);
+    DEBUG_PRINTF("Loaded %zu actors in %.2f seconds\n", actor_count,
+                 (double)(clock() - start) / CLOCKS_PER_SEC);
+
+    start = clock();
     movies = CSVParser::Parse<Movie>("data/movies.csv", &movie_count);
+    DEBUG_PRINTF("Loaded %zu movies in %.2f seconds\n", movie_count,
+                 (double)(clock() - start) / CLOCKS_PER_SEC);
+
+    start = clock();
     actor_movies_csv = CSVParser::Parse<ActorMovie>("data/cast.csv", &actor_movie_count);
+    DEBUG_PRINTF("Loaded %zu cast relations in %.2f seconds\n", actor_movie_count,
+                 (double)(clock() - start) / CLOCKS_PER_SEC);
 
     // Initialise main hashmap, index trees & relation hashmaps
     actor_map = new HashMap<int, Actor>(actor_count);
@@ -65,8 +83,20 @@ int main()
     movie_year_index = new BPlusTree<int, int>();
 
     // Populate main hashmap, index trees & relation hashmaps
+    start = clock();
     populate_main_hashmap();
-    populate_index_trees();
+    DEBUG_PRINTF("Populated hashmaps in %.2f seconds\n",
+                 (double)(clock() - start) / CLOCKS_PER_SEC);
+
+    start = clock();
+    std::thread actor_index_thread(populate_actor_indices);
+    std::thread movie_index_thread(populate_movie_indices);
+    actor_index_thread.join();
+    movie_index_thread.join();
+    DEBUG_PRINTF("Populated index trees in %.2f seconds\n",
+                 (double)(clock() - start) / CLOCKS_PER_SEC);
+
+    DEBUG_PRINTF("Total time taken: %.2f seconds\n", (double)(clock() - original_start) / CLOCKS_PER_SEC);
 
     // Main user interface loop
     int input = 0;
@@ -381,44 +411,100 @@ AVLTree<std::string> *get_actor_relations(int actor_id, int depth, const std::st
 
 void populate_main_hashmap()
 {
-    // Populate main hashmap
+    // Initialise hashmap cache
+    HashMap<int, LinkedList<int>> *actor_movies = new HashMap<int, LinkedList<int>>(actor_movie_count);
+    HashMap<int, LinkedList<int>> *movie_actors = new HashMap<int, LinkedList<int>>(actor_movie_count);
+
+    // For each actor movie relation, populate hashmaps caches
+    for (size_t i = 0; i < actor_movie_count; i++)
+    {
+        ActorMovie relationship = actor_movies_csv[i];
+        int actor_id = relationship.actor_id;
+        int movie_id = relationship.movie_id;
+
+        LinkedList<int> *actor_movies_list = actor_movies->get(actor_id);
+        if (actor_movies_list == nullptr)
+        {
+            actor_movies->insert(actor_id, LinkedList<int>());
+            actor_movies_list = actor_movies->get(actor_id);
+        }
+        actor_movies_list->push_back(movie_id);
+
+        LinkedList<int> *movie_actors_list = movie_actors->get(movie_id);
+        if (movie_actors_list == nullptr)
+        {
+            movie_actors->insert(movie_id, LinkedList<int>());
+            movie_actors_list = movie_actors->get(movie_id);
+        }
+        movie_actors_list->push_back(actor_id);
+    }
+
+    // Loop through actors and movies and populate their relations
     for (size_t i = 0; i < actor_count; i++)
     {
-        actors[i].movies = new LinkedList<int>();
-        for (size_t j = 0; j < actor_movie_count; j++)
-        {
-            if (actor_movies_csv[j].actor_id == actors[i].id)
-            {
-                actors[i].movies->push_back(actor_movies_csv[j].movie_id);
-            }
-        }
-        actor_map->insert(actors[i].id, actors[i]);
+        Actor *actor = &actors[i];
+        actor->movies = actor_movies->get(actor->id);
+        actor_map->insert(actor->id, *actor);
     }
+
     for (size_t i = 0; i < movie_count; i++)
     {
-        movies[i].actors = new LinkedList<int>();
-        for (size_t j = 0; j < actor_movie_count; j++)
-        {
-            if (actor_movies_csv[j].movie_id == movies[i].id)
-            {
-                movies[i].actors->push_back(actor_movies_csv[j].actor_id);
-            }
-        }
-        movie_map->insert(movies[i].id, movies[i]);
+        Movie *movie = &movies[i];
+        movie->actors = movie_actors->get(movie->id);
+        movie_map->insert(movie->id, *movie);
     }
 }
 
-void populate_index_trees()
+void populate_actor_indices()
 {
-    // Populate index trees
+    DEBUG_PRINTF("Populating actor indices...\n");
+    std::thread t1(populate_actor_name_index);
+    std::thread t2(populate_actor_year_index);
+    t1.join();
+    t2.join();
+}
+
+void populate_actor_name_index()
+{
+    DEBUG_PRINTF("Populating actor name index...\n");
     for (size_t i = 0; i < actor_count; i++)
     {
         actor_name_index->insert(actors[i].name, actors[i].id);
+    }
+}
+
+void populate_actor_year_index()
+{
+    DEBUG_PRINTF("Populating actor year index...\n");
+    for (size_t i = 0; i < actor_count; i++)
+    {
         actor_year_index->insert(actors[i].year, actors[i].id);
     }
+}
+
+void populate_movie_indices()
+{
+    DEBUG_PRINTF("Populating movie indices...\n");
+    std::thread t1(populate_movie_name_index);
+    std::thread t2(populate_movie_year_index);
+    t1.join();
+    t2.join();
+}
+
+void populate_movie_name_index()
+{
+    DEBUG_PRINTF("Populating movie name index...\n");
     for (size_t i = 0; i < movie_count; i++)
     {
         movie_name_index->insert(movies[i].title, movies[i].id);
+    }
+}
+
+void populate_movie_year_index()
+{
+    DEBUG_PRINTF("Populating movie year index...\n");
+    for (size_t i = 0; i < movie_count; i++)
+    {
         movie_year_index->insert(movies[i].year, movies[i].id);
     }
 }
