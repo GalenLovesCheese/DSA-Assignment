@@ -544,7 +544,61 @@ void display_update_actor_details() {
     } while(input != 0);
 }
 
-void display_update_movie_details() {}
+
+//helper function prototypes for updating movie details
+void display_change_movie_title(int movie_id, std::string &movie_title);
+void display_change_add_actor(int movie_id);
+void display_change_remove_actor(int movie_id);
+void display_remove_movie(int movie_id, std::string movie_title);
+
+void display_update_movie_details() {
+    std::string movie_title;
+    std::cout << "Enter the title of the movie you would like to modify: ";
+
+    std::cin.ignore(); 
+    std::getline(std::cin, movie_title);
+    
+    // search for specific movie id by title 
+    int *movie_id_ptr = movie_name_index->search(movie_title.c_str());
+    if (movie_id_ptr == nullptr) {
+        std::cout << "Movie not found." << std::endl;
+        return;
+    }
+    int movie_id = *movie_id_ptr;
+
+    int input = 0;
+    do{
+        // list of possible modifications to movie record
+        std::cout << "========== Modify Movie Details ==========" << std::endl;
+        std::cout << "1. Change movie title" << std::endl;
+        std::cout << "2. Add actor(s)" << std::endl;
+        std::cout << "3. Remove actor(s)" << std::endl;
+        std::cout << "4. Delete movie from record" << std::endl;
+
+        std::cout << std::endl;
+
+        std::cout << "\nChoice (Enter '0' to quit): ";
+        std::cin >> input;
+
+        if(input > 0 && input < 5){
+            switch (input){
+                case 1 :
+                    display_change_movie_title(movie_id, movie_title);
+                    break;
+                case 2:
+                    display_change_add_actor(movie_id);
+                    break;
+                case 3:
+                    display_change_remove_actor(movie_id);
+                    break;
+                case 4:
+                    display_remove_movie(movie_id, movie_title);
+                    input = 0; // break out of loop after deleting movie
+                    break;
+            }
+        }
+    } while(input != 0);
+}
 
 // ===============================
 // Helper functions
@@ -769,4 +823,124 @@ void display_remove_actor(int actor_id, std::string actor_name) {
     delete[] actor->name;
     delete actor_movies;
 
+}
+
+void display_change_movie_title(int movie_id, std::string &movie_title) {
+    std::string new_movie_title;
+    std::cout << "Enter new title for " << movie_title << ": ";
+    std::cin.ignore();
+    std::getline(std::cin, new_movie_title);
+
+    // Update movie title
+    Movie updated_movie = *movie_map->get(movie_id);
+    updated_movie.title = new char[new_movie_title.length() + 1];
+    std::strcpy(updated_movie.title, new_movie_title.c_str());
+
+    // Update main movie hashmap
+    movie_map->insert(movie_id, updated_movie);
+
+    // Update movie index
+    movie_name_index->remove(movie_title.c_str());
+    movie_name_index->insert(updated_movie.title, movie_id);
+
+    movie_title = new_movie_title;
+}
+
+void display_change_add_actor(int movie_id) {
+    // Obtain movie actor list to add to
+    Movie* movie = movie_map->get(movie_id);
+    LinkedList<int>* movie_actors = movie->actors;
+
+    std::string actor_name;
+    std::cin.ignore();
+    do {
+        std::cout << "Enter name of actor to add (Enter 0 to exit): ";
+        std::getline(std::cin, actor_name);
+
+        // Search for specific actor id by name
+        if (actor_name != "0") {
+            int* actor_id_ptr = actor_name_index->search(actor_name.c_str());
+            if (actor_id_ptr != nullptr) {
+                int actor_id = *actor_id_ptr;
+
+                // Modify actor list to reflect movie involvement
+                Actor* actor = actor_map->get(actor_id);
+                LinkedList<int>* movie_list = actor->movies;
+
+                // Check if actor is already involved in movie
+                if (movie_actors->contain(actor_id)) {
+                    std::cout << "This actor is already recorded as a cast of the movie." << std::endl;
+                    return;
+                }
+
+                movie_actors->push_back(actor_id);
+                movie_list->push_back(movie_id);
+
+            } else {
+                std::cout << "Actor not found." << std::endl;
+            }
+        }
+
+    } while (actor_name != "0");
+}
+
+void display_change_remove_actor(int movie_id) {
+    // Obtain movie actor list to remove from
+    Movie* movie = movie_map->get(movie_id);
+    LinkedList<int>* movie_actors = movie->actors;
+
+    std::string actor_name;
+    std::cin.ignore();
+    do {
+        std::cout << "Enter name of actor to remove (Enter 0 to exit): ";
+        std::getline(std::cin, actor_name);
+
+        // Search for specific actor id by name
+        if (actor_name != "0") {
+            int* actor_id_ptr = actor_name_index->search(actor_name.c_str());
+            if (actor_id_ptr != nullptr) {
+                int actor_id = *actor_id_ptr;
+
+                // Modify actor list to reflect actor removal
+                Actor* actor = actor_map->get(actor_id);
+                LinkedList<int>* movie_list = actor->movies;
+
+                // Check if actor is involved in movie
+                if (!movie_actors->contain(actor_id)) {
+                    std::cout << "This actor is not recorded as a cast of the movie." << std::endl;
+                    return;
+                }
+
+                movie_actors->remove(actor_id);
+                movie_list->remove(movie_id);
+
+            } else {
+                std::cout << "Actor not found." << std::endl;
+            }
+        }
+
+    } while (actor_name != "0");
+}
+
+void display_remove_movie(int movie_id, std::string movie_title) {
+    // Remove movie from movie_map
+    movie_map->remove(movie_id);
+
+    // Remove movie from movie_name_index
+    movie_name_index->remove(movie_title.c_str());
+
+    // Remove movie from movie_year_index
+    Movie* movie = movie_map->get(movie_id);
+    movie_year_index->remove(movie->year);
+
+    // Remove movie from all actors associated with it
+    LinkedList<int>* movie_actors = movie->actors;
+    for (auto it = movie_actors->begin(); it != movie_actors->end(); ++it) {
+        Actor* actor = actor_map->get(*it);
+        actor->movies->remove(movie_id);
+    }
+
+    // Free memory allocated for movie title
+    delete[] movie->title;
+    delete movie_actors;
 }
