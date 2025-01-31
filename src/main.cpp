@@ -431,6 +431,7 @@ void display_add_new_movie() {
     movie_year_index->insert(new_movie.year, movie_id);
 
 }
+
 void display_add_actor_to_movie() {
     std::string movie_title;
     int movie_id;
@@ -478,7 +479,57 @@ void display_add_actor_to_movie() {
         }
     } while(input != "0"); 
 }
-void display_update_actor_details() {}
+
+//helper function prototypes for updating actor details
+void display_change_actor_name(int actor_id, std::string &actor_name);
+
+void display_update_actor_details() {
+    std::string actor_name;
+    std::cout << "Enter the name of the actor you would like to modify: ";
+
+    std::cin.ignore(); 
+    std::getline(std::cin, actor_name);
+    
+    // search for specific actor id by title 
+    int *actor_id_ptr = actor_name_index->search(actor_name.c_str());
+    if (actor_id_ptr == nullptr) {
+        std::cout << "Actor not found." << std::endl;
+        return;
+    }
+    int actor_id = *actor_id_ptr;
+
+    int input = 0;
+    do{
+        // list of posisble modifications to actor record
+        std::cout << "========== Modify Actor Details ==========" << std::endl;
+        std::cout << "1. Change actor name" << std::endl;
+        std::cout << "2. Add a  movie" << std::endl;
+        std::cout << "3. Remove a movie" << std::endl;
+        std::cout << "4. Delete actor from record" << std::endl;
+
+        std::cout << std::endl;
+
+        std::cout << "\nChoice (Enter '0' to quit): ";
+        std::cin >> input;
+
+        if(input > 0 && input < 5){
+            int actor_index;
+            std::string new_actor_name;
+            switch (input){
+                case 1 :
+                    display_change_actor_name(actor_id, actor_name);
+                    break;
+                case 2:
+                    break;
+                case 3:
+                    break;
+                case 4:
+                    break;
+            }
+        }
+    } while(input != 0);
+}
+
 void display_update_movie_details() {}
 
 // ===============================
@@ -582,4 +633,26 @@ int get_year()
     std::time_t t = std::time(0);
     std::tm *now = std::localtime(&t);
     return now->tm_year + 1900;
+}
+
+void display_change_actor_name(int actor_id, std::string &actor_name){
+    std::string new_actor_name;
+    std::cout << "Enter new name of " << actor_name << ": ";
+    std::cout << "Enter new name for " << actor_name << ": ";
+    std::getline(std::cin, new_actor_name);
+    //obtain actor_index
+    int actor_index = *actor_name_index->search(actor_name.c_str());
+    int actor_index = actor_id;
+    // update actor name
+    Actor updated_actor = *actor_map->get(actor_index);
+    updated_actor.name = new char[new_actor_name.length() + 1];
+    std::strcpy(updated_actor.name, new_actor_name.c_str());
+    
+    // update main actor hashmap
+    actor_map->insert(actor_index, updated_actor);
+
+    //update actor index
+    actor_name_index->insert(new_actor_name.c_str(), actor_index);
+    actor_name_index->delete(actor_name.c_str());
+    actor_name_index->insert(updated_actor.name, actor_index);
 }
