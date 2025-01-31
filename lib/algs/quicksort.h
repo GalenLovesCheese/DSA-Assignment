@@ -1,4 +1,5 @@
 #include <string>
+#include <cstring>
 
 #include "classes/actor.h"
 #include "classes/movie.h"
