@@ -78,15 +78,8 @@ int main()
     int isAdmin = 0; // 1 - yes, 0 - no
     do
     {
-        std::cout << "========== Movie App by Bowen & Galen ==========" << std::endl;
-        std::cout << "1. Display actors between a certain age range" << std::endl;
-        std::cout << "2. Display movies released within the past 3 years" << std::endl;
-        std::cout << "3. Display all movies an actor starred in" << std::endl;
-        std::cout << "4. Display all actors in a movie" << std::endl;
-        std::cout << "5. Display all actors that an actor knows" << std::endl;
-        std::cout << std::endl;
 
-        // access administrator panel
+        // administrator panel access
         while(isAdmin != 1 || isAdmin != 0 && admin == false) {
             std::cout << "\nAccess Administrator Panel? (enter 1 to proceed, 0 to exit): ";
             std::cin >> isAdmin;  
@@ -98,6 +91,14 @@ int main()
                 break;
             }
         } 
+
+        std::cout << "========== Movie App by Bowen & Galen ==========" << std::endl;
+        std::cout << "1. Display actors between a certain age range" << std::endl;
+        std::cout << "2. Display movies released within the past 3 years" << std::endl;
+        std::cout << "3. Display all movies an actor starred in" << std::endl;
+        std::cout << "4. Display all actors in a movie" << std::endl;
+        std::cout << "5. Display all actors that an actor knows" << std::endl;
+        std::cout << std::endl;
         
 
         if (admin)
@@ -369,13 +370,14 @@ void display_actor_relations()
 void display_add_new_actor() {
     // actor details
     std::string actor_name;
-    int dob;
+    int year;
     int actor_id;
 
     std::cout << "Enter name of new actor: ";
-    std::cin >> actor_name;
+    std::cin.ignore(); // ignore any leftover newline character in the input buffer
+    std::getline(std::cin, actor_name);
     std::cout << "Enter the year of birth of " << actor_name << ": ";
-    std::cin >> dob;
+    std::cin >> year;
 
     actor_id = actor_map->getSize();
 
@@ -384,18 +386,48 @@ void display_add_new_actor() {
         actor_id ++;
     }
     
+    // creation of new actor object
     Actor new_actor;
     new_actor.name = new char[actor_name.length() + 1];
     std::strcpy(new_actor.name, actor_name.c_str());
     new_actor.id = actor_id;
-    new_actor.year = dob;
+    new_actor.year = year;
     
+    // populating of main, and index hashmaps
     actor_map->insert(actor_id, new_actor);
     actor_name_index->insert(new_actor.name, actor_id);
-    actor_year_index->insert(dob, actor_id);
+    actor_year_index->insert(year, actor_id);
     
 }
-void display_add_new_movie() {}
+void display_add_new_movie() {
+    // movie details
+    std::string movie_title;
+    int year;
+    int movie_id;
+
+    std::cout << "Enter title of new movie: ";
+    std::cin.ignore(); 
+    std::getline(std::cin, movie_title);
+    std::cout << "Enter the year of release of " << movie_title << ": ";
+    std::cin >> year;
+
+    // make sure that ids are not duplicated
+    while(movie_map->get(movie_id)){
+        movie_id ++;
+    }
+
+    //creation of new movie object
+    Movie new_movie;
+    new_movie.title = new char[movie_title.length() + 1];
+    std::strcpy(new_movie.title, movie_title.c_str());
+    new_movie.id = movie_id;
+    new_movie.year = year;
+
+    movie_map->insert(movie_id, new_movie);
+    movie_name_index->insert(new_movie.title, movie_id);
+    movie_year_index->insert(new_movie.year, movie_id);
+
+}
 void display_add_actor_to_movie() {}
 void display_update_actor_details() {}
 void display_update_movie_details() {}
