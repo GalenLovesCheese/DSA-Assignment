@@ -81,7 +81,7 @@ int main()
 
         // administrator panel access
         while(isAdmin != 1 || isAdmin != 0 && admin == false) {
-            std::cout << "\nAccess Administrator Panel? (enter 1 to proceed, 0 to exit): ";
+            std::cout << "\nAccess Administrator Panel? (Enter 1 to proceed, 0 to proceed with Unprivileged Mode): ";
             std::cin >> isAdmin;  
             if(isAdmin == 1){
                 admin =  true;
@@ -489,6 +489,7 @@ void display_add_actor_to_movie() {
 //helper function prototypes for updating actor details
 void display_change_actor_name(int actor_id, std::string &actor_name);
 void display_change_add_movie(int actor_id);
+void display_change_remove_movie(int actor_id);
 
 
 void display_update_actor_details() {
@@ -531,6 +532,7 @@ void display_update_actor_details() {
                     display_change_add_movie(actor_id);
                     break;
                 case 3:
+                    display_change_remove_movie(actor_id);
                     break;
                 case 4:
                     break;
@@ -695,6 +697,44 @@ void display_change_add_movie(int actor_id){
                 
                 actor_movies->push_back(movie_id);
                 actor_list->push_back(actor_id);
+
+            } else{
+                std::cout << "Movie not found." << std::endl;
+            }
+        }
+        
+    } while(movie_title != "0");
+}
+
+void display_change_remove_movie(int actor_id){
+    // obtain actor movie list to remove from 
+    Actor* actor = actor_map->get(actor_id);
+    LinkedList<int>* actor_movies = actor->movies;
+
+    std::string movie_title;
+    std::cin.ignore(); // ignore any leftover newline character in the input buffer
+    do{
+        std::cout << "Enter title of movie to remove (Enter 0 to exit): ";
+        std::getline(std::cin, movie_title);
+        
+        // search for specific movie id by title 
+        if(movie_title != "0"){
+            int *movie_id_ptr = movie_name_index->search(movie_title.c_str());
+            if (movie_id_ptr != nullptr) {
+                int movie_id = *movie_id_ptr;
+
+                // modify movie list to reflect actor removal
+                Movie* movie = movie_map->get(movie_id);
+                LinkedList<int>* actor_list = movie->actors;
+
+                // check if actor is involved in movie
+                if(!actor_list->contain(actor_id)){
+                    std::cout<< "This actor is not recorded as a cast of the movie." <<std::endl;
+                    return;
+                }
+                
+                actor_movies->remove(movie_id);
+                actor_list->remove(actor_id);
 
             } else{
                 std::cout << "Movie not found." << std::endl;

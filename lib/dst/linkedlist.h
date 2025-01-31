@@ -127,6 +127,40 @@ public:
         return false;
     }
 
+    bool remove(T target){
+        if (!head) {
+            return false;
+        }
+
+        if (head->data == target) {
+            Node* temp = head;
+            head = head->next;
+            delete temp;
+            if (!head) {
+                tail = nullptr;
+            }
+            --size;
+            return true;
+        }
+
+        Node* current = head;
+        while (current->next) {
+            if (current->next->data == target) {
+                Node* toDelete = current->next;
+                current->next = toDelete->next;
+                if (toDelete == tail) {
+                    tail = current;
+                }
+                delete toDelete;
+                --size;
+                return true;
+            }
+            current = current->next;
+        }
+
+        return false;
+    }
+
     // Get first element
     T &front()
     {
