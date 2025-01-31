@@ -116,6 +116,17 @@ public:
         }
     }
 
+    bool contain(T &target){
+        Node* current = head;
+        while(current){
+            if(current->data == target){
+                return true;
+            }
+            current = current->next;
+        }
+        return false;
+    }
+
     // Get first element
     T &front()
     {

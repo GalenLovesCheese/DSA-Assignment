@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 #include <ctime>
+#include <limits>
 
 #include "dst/bplustree.h"
 #include "dst/hashmap.h"
@@ -29,7 +30,6 @@ BPlusTree<int, int> *movie_year_index;
 // Function prototypes
 void populate_main_hashmap();
 void populate_index_trees();
-void populate_relation_hashmaps();
 
 AVLTree<std::string> *get_actor_relations(int actor_id, int depth, const std::string &original_name);
 
@@ -403,7 +403,7 @@ void display_add_new_movie() {
     // movie details
     std::string movie_title;
     int year;
-    int movie_id;
+    int movie_id = 0;
 
     std::cout << "Enter title of new movie: ";
     std::cin.ignore(); 
@@ -428,7 +428,46 @@ void display_add_new_movie() {
     movie_year_index->insert(new_movie.year, movie_id);
 
 }
-void display_add_actor_to_movie() {}
+void display_add_actor_to_movie() {
+    std::string movie_title;
+    int movie_id;
+    
+    std::cout << "Enter title of movie: ";
+    std::cin.ignore(); 
+    std::getline(std::cin, movie_title);
+    
+    // search for specific movie id by title 
+    int *movie_id_ptr = movie_name_index->search(movie_title.c_str());
+    if (movie_id_ptr != nullptr) {
+        movie_id = *movie_id_ptr;
+    } else {
+        std::cout << "Movie not found." << std::endl;
+        return;
+    }
+
+    // obtain cast of movie
+    Movie* movie = movie_map->get(movie_id);
+    LinkedList<int>* actor_ids = movie->actors;
+    std::string input;
+
+    // add actors to movie
+    do{
+        std::cout << "Please enter the name of actor to add: (Enter 0 to exit) ";
+        std::getline(std::cin, input);
+        if(!actor_name_index->search(input.c_str())){
+            std::cout << "Actor does not exist." << std::endl;
+        }
+        else{
+            int actor_id = *actor_name_index->search(input.c_str());
+            if(actor_ids->contain(actor_id)){
+                std::cout<< "This actor is already recorded as a cast of the movie." <<std::endl;
+            }
+            else if(input != "0"){
+                actor_ids->push_back(actor_id);
+            }
+        }
+    } while(input != "0"); 
+}
 void display_update_actor_details() {}
 void display_update_movie_details() {}
 
