@@ -376,6 +376,13 @@ void display_add_new_actor() {
     std::cout << "Enter name of new actor: ";
     std::cin.ignore(); // ignore any leftover newline character in the input buffer
     std::getline(std::cin, actor_name);
+
+    // Check if actor already exists
+    if (actor_name_index->search(actor_name.c_str())) {
+        std::cout << "Actor already exists." << std::endl;
+        return;
+    }
+
     std::cout << "Enter the year of birth of " << actor_name << ": ";
     std::cin >> year;
 
@@ -383,7 +390,7 @@ void display_add_new_actor() {
 
     // make sure that ids are not duplicated
     while(actor_map->get(actor_id)){
-        actor_id ++;
+        actor_id++;
     }
     
     // creation of new actor object
@@ -394,7 +401,6 @@ void display_add_new_actor() {
     new_actor.year = year;
     new_actor.movies = new LinkedList<int>();
 
-    
     // populating of main, and index hashmaps
     actor_map->insert(actor_id, new_actor);
     actor_name_index->insert(new_actor.name, actor_id);
@@ -482,6 +488,8 @@ void display_add_actor_to_movie() {
 
 //helper function prototypes for updating actor details
 void display_change_actor_name(int actor_id, std::string &actor_name);
+void display_change_add_movie(int actor_id);
+
 
 void display_update_actor_details() {
     std::string actor_name;
@@ -503,7 +511,7 @@ void display_update_actor_details() {
         // list of posisble modifications to actor record
         std::cout << "========== Modify Actor Details ==========" << std::endl;
         std::cout << "1. Change actor name" << std::endl;
-        std::cout << "2. Add a  movie" << std::endl;
+        std::cout << "2. Add a movie" << std::endl;
         std::cout << "3. Remove a movie" << std::endl;
         std::cout << "4. Delete actor from record" << std::endl;
 
@@ -520,6 +528,7 @@ void display_update_actor_details() {
                     display_change_actor_name(actor_id, actor_name);
                     break;
                 case 2:
+                    display_change_add_movie(actor_id);
                     break;
                 case 3:
                     break;
@@ -637,11 +646,10 @@ int get_year()
 
 void display_change_actor_name(int actor_id, std::string &actor_name){
     std::string new_actor_name;
-    std::cout << "Enter new name of " << actor_name << ": ";
     std::cout << "Enter new name for " << actor_name << ": ";
+    std::cin.ignore(); 
     std::getline(std::cin, new_actor_name);
     //obtain actor_index
-    int actor_index = *actor_name_index->search(actor_name.c_str());
     int actor_index = actor_id;
     // update actor name
     Actor updated_actor = *actor_map->get(actor_index);
@@ -653,6 +661,45 @@ void display_change_actor_name(int actor_id, std::string &actor_name){
 
     //update actor index
     actor_name_index->insert(new_actor_name.c_str(), actor_index);
-    actor_name_index->delete(actor_name.c_str());
+    actor_name_index->remove(actor_name.c_str());
     actor_name_index->insert(updated_actor.name, actor_index);
+}
+
+void display_change_add_movie(int actor_id){
+
+    // obtain actor movie list to add to 
+    Actor* actor = actor_map->get(actor_id);
+    LinkedList<int>* actor_movies = actor->movies;
+
+    std::string movie_title;
+    std::cin.ignore(); // ignore any leftover newline character in the input buffer
+    do{
+        std::cout << "Enter title of movie to add (Enter 0 to exit): ";
+        std::getline(std::cin, movie_title);
+        
+        // search for specific movie id by title 
+        if(movie_title != "0"){
+            int *movie_id_ptr = movie_name_index->search(movie_title.c_str());
+            if (movie_id_ptr != nullptr) {
+                int movie_id = *movie_id_ptr;
+
+                // modify movie list to reflect actor involvement
+                Movie* movie = movie_map->get(movie_id);
+                LinkedList<int>* actor_list = movie->actors;
+
+                // check if actor is already involved in movie
+                if(actor_list->contain(actor_id)){
+                    std::cout<< "This actor is already recorded as a cast of the movie." <<std::endl;
+                    return;
+                }
+                
+                actor_movies->push_back(movie_id);
+                actor_list->push_back(actor_id);
+
+            } else{
+                std::cout << "Movie not found." << std::endl;
+            }
+        }
+        
+    } while(movie_title != "0");
 }
