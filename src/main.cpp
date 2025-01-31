@@ -392,6 +392,8 @@ void display_add_new_actor() {
     std::strcpy(new_actor.name, actor_name.c_str());
     new_actor.id = actor_id;
     new_actor.year = year;
+    new_actor.movies = new LinkedList<int>();
+
     
     // populating of main, and index hashmaps
     actor_map->insert(actor_id, new_actor);
@@ -422,6 +424,7 @@ void display_add_new_movie() {
     std::strcpy(new_movie.title, movie_title.c_str());
     new_movie.id = movie_id;
     new_movie.year = year;
+    new_movie.actors = new LinkedList<int>();
 
     movie_map->insert(movie_id, new_movie);
     movie_name_index->insert(new_movie.title, movie_id);
@@ -448,11 +451,11 @@ void display_add_actor_to_movie() {
     // obtain cast of movie
     Movie* movie = movie_map->get(movie_id);
     LinkedList<int>* actor_ids = movie->actors;
-    std::string input;
+    std::string input;    
 
     // add actors to movie
     do{
-        std::cout << "Please enter the name of actor to add: (Enter 0 to exit) ";
+        std::cout << "Please enter the name of actor to add (Enter 0 to exit): ";
         std::getline(std::cin, input);
         if(!actor_name_index->search(input.c_str())){
             std::cout << "Actor does not exist." << std::endl;
@@ -463,6 +466,13 @@ void display_add_actor_to_movie() {
                 std::cout<< "This actor is already recorded as a cast of the movie." <<std::endl;
             }
             else if(input != "0"){
+                Actor* actor = actor_map->get(actor_id);
+
+                // add movie to actor's list of involved movies
+                LinkedList<int>* movie_ids = actor->movies;
+                movie_ids->push_back(movie_id);
+                
+                // add actor to movie's list of involved actors
                 actor_ids->push_back(actor_id);
             }
         }
