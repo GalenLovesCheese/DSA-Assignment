@@ -43,6 +43,11 @@ void display_recent_movies();
 void display_actor_movies();
 void display_movie_actors();
 void display_actor_relations();
+void display_add_new_actor();
+void display_add_new_movie();
+void display_add_actor_to_movie();
+void display_update_actor_details();
+void display_update_movie_details();
 
 int main()
 {
@@ -70,6 +75,7 @@ int main()
 
     // Main user interface loop
     int input = 0;
+    int isAdmin = 0; // 1 - yes, 0 - no
     do
     {
         std::cout << "========== Movie App by Bowen & Galen ==========" << std::endl;
@@ -78,6 +84,21 @@ int main()
         std::cout << "3. Display all movies an actor starred in" << std::endl;
         std::cout << "4. Display all actors in a movie" << std::endl;
         std::cout << "5. Display all actors that an actor knows" << std::endl;
+        std::cout << std::endl;
+
+        // access administrator panel
+        while(isAdmin != 1 || isAdmin != 0 && admin == false) {
+            std::cout << "\nAccess Administrator Panel? (enter 1 to proceed, 0 to exit): ";
+            std::cin >> isAdmin;  
+            if(isAdmin == 1){
+                admin =  true;
+                break;
+            }
+            if (isAdmin == 0){
+                break;
+            }
+        } 
+        
 
         if (admin)
         {
@@ -89,7 +110,7 @@ int main()
             std::cout << "10. Update movie details" << std::endl;
         }
 
-        std::cout << "\nChoice (Type '0' to quit): ";
+        std::cout << "\nChoice (Enter '0' to quit): ";
         std::cin >> input;
 
         if (input >= 6 && input <= 10 && admin)
@@ -119,15 +140,6 @@ int main()
 }
 
 // ===============================
-// Assignment Functions (Admin)
-// ===============================
-
-void admin_handler(int input)
-{
-    // TODO: Implement admin handler
-}
-
-// ===============================
 // Assignment Functions (User)
 // ===============================
 
@@ -152,6 +164,33 @@ void user_handler(int input)
         break;
     default:
         break;
+    }
+}
+
+// ===============================
+// Assignment Functions (Admin)
+// ===============================
+
+void admin_handler(int input)
+{
+    // TODO: Implement admin handler
+    switch(input){
+        
+        case 6:
+            display_add_new_actor();
+            break;
+        case 7:
+            display_add_new_movie();
+            break;
+        case 8:
+            display_add_actor_to_movie();
+            break;
+        case 9: 
+            display_update_actor_details();
+            break;
+        case 10:
+            display_update_movie_details();
+            break;
     }
 }
 
@@ -326,6 +365,12 @@ void display_actor_relations()
         ++it;
     }
 }
+
+void display_add_new_actor() {}
+void display_add_new_movie() {}
+void display_add_actor_to_movie() {}
+void display_update_actor_details() {}
+void display_update_movie_details() {}
 
 // ===============================
 // Helper functions
