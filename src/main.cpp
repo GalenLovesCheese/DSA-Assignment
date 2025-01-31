@@ -490,6 +490,7 @@ void display_add_actor_to_movie() {
 void display_change_actor_name(int actor_id, std::string &actor_name);
 void display_change_add_movie(int actor_id);
 void display_change_remove_movie(int actor_id);
+void display_remove_actor(int actor_id, std::string actor_name);
 
 
 void display_update_actor_details() {
@@ -535,6 +536,8 @@ void display_update_actor_details() {
                     display_change_remove_movie(actor_id);
                     break;
                 case 4:
+                    display_remove_actor(actor_id, actor_name);
+                    input = 0; // break out of loop after deleting actor
                     break;
             }
         }
@@ -742,4 +745,28 @@ void display_change_remove_movie(int actor_id){
         }
         
     } while(movie_title != "0");
+}
+
+void display_remove_actor(int actor_id, std::string actor_name) {
+    // Remove actor from actor_map
+    actor_map->remove(actor_id);
+
+    // Remove actor from actor_name_index
+    actor_name_index->remove(actor_name.c_str());
+
+    // Remove actor from actor_year_index
+    Actor* actor = actor_map->get(actor_id);
+    actor_year_index->remove(actor->year);
+
+    // Remove actor from all movies they are associated with
+    LinkedList<int>* actor_movies = actor->movies;
+    for (auto it = actor_movies->begin(); it != actor_movies->end(); ++it) {
+        Movie* movie = movie_map->get(*it);
+        movie->actors->remove(actor_id);
+    }
+
+    // Free memory allocated for actor name
+    delete[] actor->name;
+    delete actor_movies;
+
 }
