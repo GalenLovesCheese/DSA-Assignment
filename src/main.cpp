@@ -1,7 +1,8 @@
 #include <iostream>
 #include <string>
 #include <ctime>
-#include <thread>
+
+#include "algs/quicksort.h"
 
 #include "dst/bplustree.h"
 #include "dst/hashmap.h"
@@ -89,10 +90,8 @@ int main()
                  (double)(clock() - start) / CLOCKS_PER_SEC);
 
     start = clock();
-    std::thread actor_index_thread(populate_actor_indices);
-    std::thread movie_index_thread(populate_movie_indices);
-    actor_index_thread.join();
-    movie_index_thread.join();
+    populate_actor_indices();
+    populate_movie_indices();
     DEBUG_PRINTF("Populated index trees in %.2f seconds\n",
                  (double)(clock() - start) / CLOCKS_PER_SEC);
 
@@ -457,50 +456,102 @@ void populate_main_hashmap()
 
 void populate_actor_indices()
 {
-    std::thread t1(populate_actor_name_index);
-    std::thread t2(populate_actor_year_index);
-    t1.join();
-    t2.join();
+    populate_actor_name_index();
+    populate_actor_year_index();
 }
 
 void populate_actor_name_index()
 {
-    for (size_t i = 0; i < actor_count; i++)
+    DEBUG_PRINTF("Populating actor name index...\n");
+    Actor *actors_copy = new Actor[actor_count];
+    memcpy(actors_copy, actors, sizeof(Actor) * actor_count);
+    quicksort<Actor>(actors_copy, 0, actor_count - 1, compare_actor_name);
+
+    const char **names = new const char *[actor_count];
+    int *ids = new int[actor_count];
+    for (size_t i = 0; i < actor_count; ++i)
     {
-        actor_name_index->insert(actors[i].name, actors[i].id);
+        names[i] = actors_copy[i].name;
+        ids[i] = actors_copy[i].id;
     }
+
+    actor_name_index->bulk_load(names, ids, actor_count);
+
+    delete[] actors_copy;
+    delete[] names;
+    delete[] ids;
 }
 
 void populate_actor_year_index()
 {
-    for (size_t i = 0; i < actor_count; i++)
+    DEBUG_PRINTF("Populating actor year index...\n");
+    Actor *actors_copy = new Actor[actor_count];
+    memcpy(actors_copy, actors, sizeof(Actor) * actor_count);
+    quicksort<Actor>(actors_copy, 0, actor_count - 1, compare_actor_year);
+
+    int *years = new int[actor_count];
+    int *ids = new int[actor_count];
+    for (size_t i = 0; i < actor_count; ++i)
     {
-        actor_year_index->insert(actors[i].year, actors[i].id);
+        years[i] = actors_copy[i].year;
+        ids[i] = actors_copy[i].id;
     }
+
+    actor_year_index->bulk_load(years, ids, actor_count);
+
+    delete[] actors_copy;
+    delete[] years;
+    delete[] ids;
 }
 
 void populate_movie_indices()
 {
-    std::thread t1(populate_movie_name_index);
-    std::thread t2(populate_movie_year_index);
-    t1.join();
-    t2.join();
+    populate_movie_name_index();
+    populate_movie_year_index();
 }
 
 void populate_movie_name_index()
 {
-    for (size_t i = 0; i < movie_count; i++)
+    DEBUG_PRINTF("Populating movie name index...\n");
+    Movie *movies_copy = new Movie[movie_count];
+    memcpy(movies_copy, movies, sizeof(Movie) * movie_count);
+    quicksort<Movie>(movies_copy, 0, movie_count - 1, compare_movie_title);
+
+    const char **titles = new const char *[movie_count];
+    int *ids = new int[movie_count];
+    for (size_t i = 0; i < movie_count; ++i)
     {
-        movie_name_index->insert(movies[i].title, movies[i].id);
+        titles[i] = movies_copy[i].title;
+        ids[i] = movies_copy[i].id;
     }
+
+    movie_name_index->bulk_load(titles, ids, movie_count);
+
+    delete[] movies_copy;
+    delete[] titles;
+    delete[] ids;
 }
 
 void populate_movie_year_index()
 {
-    for (size_t i = 0; i < movie_count; i++)
+    DEBUG_PRINTF("Populating movie year index...\n");
+    Movie *movies_copy = new Movie[movie_count];
+    memcpy(movies_copy, movies, sizeof(Movie) * movie_count);
+    quicksort<Movie>(movies_copy, 0, movie_count - 1, compare_movie_year);
+
+    int *years = new int[movie_count];
+    int *ids = new int[movie_count];
+    for (size_t i = 0; i < movie_count; ++i)
     {
-        movie_year_index->insert(movies[i].year, movies[i].id);
+        years[i] = movies_copy[i].year;
+        ids[i] = movies_copy[i].id;
     }
+
+    movie_year_index->bulk_load(years, ids, movie_count);
+
+    delete[] movies_copy;
+    delete[] years;
+    delete[] ids;
 }
 
 int get_year()

@@ -340,6 +340,83 @@ public:
         // Return iterator at first valid point
         return RangeIterator(current, start_index, end);
     }
+
+    // Bulk load sorted keys and values
+    void bulk_load(const KeyType *keys, const ValueType *values, size_t count)
+    {
+        // Clear existing tree
+        destroy_tree(root);
+        root = create_leaf_node();
+        Node *current_leaf = root;
+
+        // Fill the leaves
+        for (size_t i = 0; i < count; ++i)
+        {
+            if (current_leaf->key_count == MAX_KEYS)
+            {
+                Node *new_leaf = create_leaf_node();
+                current_leaf->next_leaf = new_leaf;
+                current_leaf = new_leaf;
+            }
+            current_leaf->keys[current_leaf->key_count] = keys[i];
+            current_leaf->values[current_leaf->key_count] = new ValueType(values[i]);
+            current_leaf->key_count++;
+        }
+
+        // Collect all leaves into an array
+        size_t num_leaves = 0;
+        Node *leaf = root;
+        while (leaf != nullptr)
+        {
+            num_leaves++;
+            leaf = leaf->next_leaf;
+        }
+
+        Node **leaves = new Node *[num_leaves];
+        leaf = root;
+        for (size_t i = 0; i < num_leaves; ++i)
+        {
+            leaves[i] = leaf;
+            leaf = leaf->next_leaf;
+        }
+
+        // Build internal levels
+        size_t current_level_count = num_leaves;
+        Node **current_level = leaves;
+
+        while (current_level_count > 1)
+        {
+            size_t parent_count = (current_level_count + ORDER - 1) / ORDER;
+            Node **parents = new Node *[parent_count];
+            size_t parent_idx = 0;
+
+            for (size_t i = 0; i < current_level_count;)
+            {
+                Node *parent = create_internal_node();
+                int child_count = 0;
+
+                while (child_count < ORDER && i < current_level_count)
+                {
+                    parent->children[child_count] = current_level[i];
+                    if (child_count > 0)
+                    {
+                        parent->keys[child_count - 1] = current_level[i]->keys[0];
+                    }
+                    child_count++;
+                    i++;
+                }
+
+                parent->key_count = child_count - 1;
+                parents[parent_idx++] = parent;
+            }
+
+            delete[] current_level;
+            current_level = parents;
+            current_level_count = parent_idx;
+        }
+
+        root = current_level[0];
+    }
 };
 
 #endif // BPLUSTREE_H
