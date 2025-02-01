@@ -1,389 +1,403 @@
-#include <cstddef>
-#include <cstring>
-#include <functional>
+#include <iostream>
 
-template <typename T, typename Compare = std::less<T>>
+// Template class for AVLNode
+template <typename T>
 class AVLTree
 {
 private:
     struct Node
     {
-        T data;
-        Node *left;
-        Node *right;
+        T key;       // value of AVLNode
+        Node *left;  // pointer to left node
+        Node *right; // pointer to right node
         int height;
-
-        Node(const T &value) : data(value), left(nullptr), right(nullptr), height(1) {}
     };
-
+    // pointer to track root node of AVL tree
     Node *root;
-    size_t tree_size;
-    Compare comp;
 
-    int get_height(Node *node)
-    {
-        return node ? node->height : 0;
-    }
-
-    int get_balance(Node *node)
-    {
-        return node ? get_height(node->left) - get_height(node->right) : 0;
-    }
-
-    void update_height(Node *node)
-    {
-        if (node)
-        {
-            int left_height = get_height(node->left);
-            int right_height = get_height(node->right);
-            node->height = 1 + (left_height > right_height ? left_height : right_height);
-        }
-    }
-
-    Node *rotate_right(Node *y)
-    {
-        if (!y || !y->left)
-            return y;
-
-        Node *x = y->left;
-        Node *T2 = x->right;
-
-        x->right = y;
-        y->left = T2;
-
-        update_height(y);
-        update_height(x);
-
-        return x;
-    }
-
-    Node *rotate_left(Node *x)
-    {
-        if (!x || !x->right)
-            return x;
-
-        Node *y = x->right;
-        Node *T2 = y->left;
-
-        y->left = x;
-        x->right = T2;
-
-        update_height(x);
-        update_height(y);
-
-        return y;
-    }
-
-    Node *insert_internal(Node *node, const T &value, bool &inserted)
+    // get height of node
+    int height(Node *node)
     {
         if (!node)
         {
-            inserted = true;
-            return new Node(value);
-        }
-
-        if (!comp(value, node->data) && !comp(node->data, value))
-        {
-            inserted = false;
-            return node;
-        }
-
-        if (comp(value, node->data))
-        {
-            node->left = insert_internal(node->left, value, inserted);
+            return 0;
         }
         else
         {
-            node->right = insert_internal(node->right, value, inserted);
+            return node->height;
         }
-
-        if (!inserted)
-            return node;
-
-        update_height(node);
-
-        int balance = get_balance(node);
-
-        if (balance > 1 && comp(value, node->left->data))
-        {
-            return rotate_right(node);
-        }
-
-        if (balance < -1 && comp(node->right->data, value))
-        {
-            return rotate_left(node);
-        }
-
-        if (balance > 1 && comp(node->left->data, value))
-        {
-            node->left = rotate_left(node->left);
-            return rotate_right(node);
-        }
-
-        if (balance < -1 && comp(value, node->right->data))
-        {
-            node->right = rotate_right(node->right);
-            return rotate_left(node);
-        }
-
-        return node;
     }
 
-    Node *find_min(Node *node)
-    {
-        while (node && node->left)
-        {
-            node = node->left;
-        }
-        return node;
-    }
-
-    Node *delete_internal(Node *node, const T &value, bool &deleted)
+    // obtain balance factor of node
+    int getBalance(Node *node)
     {
         if (!node)
         {
-            deleted = false;
-            return nullptr;
+            return 0;
+        }
+        return height(node->left) - height(node->right); // BF = LN - RN
+    }
+
+    // rotate right
+    Node *rightRotate(Node *current)
+    {
+        Node *newRoot = current->left;  // new root node
+        current->left = newRoot->right; // move previous left->left node to be new root's left node
+        newRoot->right = current;       // assign new right node to be previous root node
+
+        // update heights
+        current->height = 1 + std::max(height(current->left), height(current->right));
+        newRoot->height = 1 + std::max(height(newRoot->left), height(newRoot->right));
+
+        return newRoot;
+    }
+
+    // rotate left
+    Node *leftRotate(Node *current)
+    {
+        Node *newRoot = current->right;
+        current->right = newRoot->left;
+        newRoot->left = current;
+
+        // update heights
+        current->height = 1 + std::max(height(current->left), height(current->right));
+        newRoot->height = 1 + std::max(height(newRoot->left), height(newRoot->right));
+
+        return newRoot;
+    }
+
+    bool search(Node *root, T key)
+    {
+        if (!root)
+        {
+            return false;
+        }
+        if (root->key == key)
+        {
+            return true;
+        }
+        if (key < root->key)
+        {
+            return search(root->left, key);
+        }
+        return search(root->right, key);
+    }
+
+    // function to insert new key
+    Node *insert(Node *current, T key)
+    {
+        // accept only unique keys
+        if (search(current, key))
+        {
+            return current;
+        }
+        if (!current)
+        {
+            Node *newNode = new Node;
+            newNode->key = key;
+            newNode->left = newNode->right = nullptr;
+            newNode->height = 1;
+            return newNode;
         }
 
-        if (comp(value, node->data))
+        if (key < current->key)
         {
-            node->left = delete_internal(node->left, value, deleted);
+            current->left = insert(current->left, key);
         }
-        else if (comp(node->data, value))
+        else if (key > current->key)
         {
-            node->right = delete_internal(node->right, value, deleted);
+            current->right = insert(current->right, key);
         }
         else
         {
-            deleted = true;
-            if (!node->left || !node->right)
+            return current; // Duplicate keys are not allowed
+        }
+
+        current->height = 1 + std::max(height(current->left), height(current->right));
+        int balanceFactor = getBalance(current);
+
+        // left-left-case
+        if (balanceFactor > 1 && key < current->left->key)
+        {
+            return rightRotate(current);
+        }
+        // right-right-case
+        if (balanceFactor < -1 && key > current->right->key)
+        {
+            return leftRotate(current);
+        }
+        // left-right-case
+        if (balanceFactor > 1 && key > current->left->key)
+        {
+            current->left = leftRotate(current->left);
+            return rightRotate(current);
+        }
+        // right-left-case
+        if (balanceFactor < -1 && key < current->right->key)
+        {
+            current->right = rightRotate(current->right);
+            return leftRotate(current);
+        }
+
+        // return unchanged node pointer
+        return current;
+    }
+
+    // find node with minimum key value
+    Node *minValueNode(Node *node)
+    {
+        Node *current = node;
+        while (current->left != nullptr)
+        {
+            current = current->left;
+        }
+        return current;
+    }
+
+    Node *deleteNode(Node *node, T key)
+    {
+        // handle if avl tree is empty
+        if (node == nullptr)
+        {
+            return node;
+        }
+
+        if (key < node->key)
+        {
+            node->left = deleteNode(node->left, key);
+        }
+        else if (key > node->key)
+        {
+            node->right = deleteNode(node->right, key);
+        }
+        else
+        {
+            // node with only one child or no child
+            if ((node->left == nullptr) || (node->right == nullptr))
             {
                 Node *temp = node->left ? node->left : node->right;
-                if (!temp)
+
+                // no child case
+                if (temp == nullptr)
                 {
                     temp = node;
                     node = nullptr;
                 }
                 else
-                {
-                    *node = *temp;
+                {                  // single child node
+                    *node = *temp; // copy the contents of the non-empty child
                 }
                 delete temp;
             }
             else
             {
-                Node *temp = find_min(node->right);
-                node->data = temp->data;
-                node->right = delete_internal(node->right, temp->data, deleted);
+                // node with two children: Get the inorder successor (smallest in the right subtree)
+                Node *temp = minValueNode(node->right);
+
+                // copy the inorder successor's data to this node
+                node->key = temp->key;
+
+                // delete the inorder successor
+                node->right = deleteNode(node->right, temp->key);
             }
         }
 
-        if (!node)
-            return nullptr;
-        if (!deleted)
+        // return if tree has only one node
+        if (node == nullptr)
+        {
             return node;
+        }
+      
+        // update height of the current node
+        node->height = 1 + std::max(height(node->left), height(node->right));
 
-        update_height(node);
+        // obtain balance factor if node
+        int balanceFactor = getBalance(node);
 
-        int balance = get_balance(node);
-
-        if (balance > 1 && get_balance(node->left) >= 0)
+        // handle unbalanced tree after deletion
+        // left-left-case
+        if (balanceFactor > 1 && getBalance(node->left) >= 0)
         {
-            return rotate_right(node);
+            return rightRotate(node);
         }
 
-        if (balance > 1 && get_balance(node->left) < 0)
+        // left-right-case
+        if (balanceFactor > 1 && getBalance(node->left) < 0)
         {
-            node->left = rotate_left(node->left);
-            return rotate_right(node);
+            node->left = leftRotate(node->left);
+            return rightRotate(node);
         }
 
-        if (balance < -1 && get_balance(node->right) <= 0)
+        // right-right-case
+        if (balanceFactor < -1 && getBalance(node->right) <= 0)
         {
-            return rotate_left(node);
+            return leftRotate(node);
         }
 
-        if (balance < -1 && get_balance(node->right) > 0)
+        // right-left-case
+        if (balanceFactor < -1 && getBalance(node->right) > 0)
         {
-            node->right = rotate_right(node->right);
-            return rotate_left(node);
+            node->right = rightRotate(node->right);
+            return leftRotate(node);
         }
 
         return node;
     }
 
-    void clear_internal(Node *node)
+public:
+    // avltree constructor
+    AVLTree() : root(nullptr) {}
+
+    void insertNode(T key)
     {
-        if (node)
-        {
-            clear_internal(node->left);
-            clear_internal(node->right);
-            delete node;
-        }
+        root = insert(root, key);
     }
 
-public:
+    void deleteNode(T key)
+    {
+        root = deleteNode(root, key);
+    }
+
     class Iterator
     {
     private:
-        Node *current;
-        Node **stack;
-        int stack_size;
-        int top;
-
-        void push_left_branch(Node *node)
+        struct StackNode
         {
-            while (node)
+            Node *treeNode;
+            StackNode *next;
+            StackNode(Node *node, StackNode *nxt) : treeNode(node), next(nxt) {}
+        };
+
+        StackNode *stackTop;
+
+        void push(Node *node)
+        {
+            stackTop = new StackNode(node, stackTop);
+        }
+
+        void pop()
+        {
+            if (stackTop)
             {
-                stack[++top] = node;
-                node = node->left;
+                StackNode *temp = stackTop;
+                stackTop = stackTop->next;
+                delete temp;
             }
         }
 
-    public:
-        Iterator(Node *root, size_t tree_size) : current(nullptr),
-                                                 stack(new Node *[tree_size + 1]), stack_size(tree_size), top(-1)
+        Node *top() const
         {
-            push_left_branch(root);
-            if (top >= 0)
+            return stackTop ? stackTop->treeNode : nullptr;
+        }
+
+        bool empty() const
+        {
+            return stackTop == nullptr;
+        }
+
+    public:
+        Iterator(Node *root) : stackTop(nullptr)
+        {
+            while (root)
             {
-                current = stack[top];
+                push(root);
+                root = root->left;
             }
+        }
+
+        Iterator() : stackTop(nullptr) {}
+
+        Iterator(const Iterator &other) : stackTop(nullptr)
+        {
+            StackNode **current = &stackTop;
+            StackNode *otherCurrent = other.stackTop;
+            while (otherCurrent)
+            {
+                *current = new StackNode(otherCurrent->treeNode, nullptr);
+                current = &((*current)->next);
+                otherCurrent = otherCurrent->next;
+            }
+        }
+
+        Iterator &operator=(const Iterator &other)
+        {
+            if (this != &other)
+            {
+                while (!empty())
+                    pop();
+                StackNode **current = &stackTop;
+                StackNode *otherCurrent = other.stackTop;
+                while (otherCurrent)
+                {
+                    *current = new StackNode(otherCurrent->treeNode, nullptr);
+                    current = &((*current)->next);
+                    otherCurrent = otherCurrent->next;
+                }
+            }
+            return *this;
         }
 
         ~Iterator()
         {
-            delete[] stack;
+            while (!empty())
+                pop();
         }
 
-        bool has_next() const
+        T &operator*() const
         {
-            return top >= 0;
-        }
-
-        T &operator*()
-        {
-            return current->data;
+            return top()->key;
         }
 
         Iterator &operator++()
         {
-            if (top >= 0)
+            if (!empty())
             {
-                Node *node = stack[top--];
-                if (node->right)
+                Node *current = top();
+                pop();
+                Node *right = current->right;
+                while (right)
                 {
-                    push_left_branch(node->right);
+                    push(right);
+                    right = right->left;
                 }
-                current = top >= 0 ? stack[top] : nullptr;
             }
             return *this;
         }
+
+        Iterator operator++(int)
+        {
+            Iterator tmp = *this;
+            ++(*this);
+            return tmp;
+        }
+
+        bool operator==(const Iterator &other) const
+        {
+            StackNode *a = stackTop;
+            StackNode *b = other.stackTop;
+            while (a && b)
+            {
+                if (a->treeNode != b->treeNode)
+                    return false;
+                a = a->next;
+                b = b->next;
+            }
+            return !a && !b;
+        }
+
+        bool operator!=(const Iterator &other) const
+        {
+            return !(*this == other);
+        }
     };
-
-    AVLTree() : root(nullptr), tree_size(0), comp() {}
-
-    explicit AVLTree(const Compare &cmp) : root(nullptr), tree_size(0), comp(cmp) {}
-
-    ~AVLTree()
-    {
-        clear_internal(root);
-    }
-
-    AVLTree(const AVLTree &other) : root(nullptr), tree_size(0), comp(other.comp)
-    {
-        root = copyTree(other.root);
-        tree_size = other.tree_size;
-    }
-
-    AVLTree &operator=(const AVLTree &other)
-    {
-        if (this != &other)
-        {
-            clear();
-            comp = other.comp;
-            root = copyTree(other.root);
-            tree_size = other.tree_size;
-        }
-        return *this;
-    }
-
-    Node *copyTree(Node *node)
-    {
-        if (!node)
-            return nullptr;
-        Node *newNode = new Node(node->data);
-        newNode->left = copyTree(node->left);
-        newNode->right = copyTree(node->right);
-        newNode->height = node->height;
-        return newNode;
-    }
-
-    void insert(const T &value)
-    {
-        bool inserted = false;
-        root = insert_internal(root, value, inserted);
-        if (inserted)
-            tree_size++;
-    }
-
-    void remove(const T &value)
-    {
-        bool deleted = false;
-        root = delete_internal(root, value, deleted);
-        if (deleted)
-            tree_size--;
-    }
-
-    bool contains(const T &value) const
-    {
-        Node *current = root;
-        while (current)
-        {
-            if (comp(value, current->data))
-            {
-                current = current->left;
-            }
-            else if (comp(current->data, value))
-            {
-                current = current->right;
-            }
-            else
-            {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    size_t size() const
-    {
-        return tree_size;
-    }
-
-    bool empty() const
-    {
-        return tree_size == 0;
-    }
-
-    void clear()
-    {
-        clear_internal(root);
-        root = nullptr;
-        tree_size = 0;
-    }
 
     Iterator begin()
     {
-        return Iterator(root, tree_size);
+        return Iterator(root);
     }
-};
 
-struct CharPointerCompare
-{
-    bool operator()(const char *a, const char *b) const
+    Iterator end()
     {
-        return std::strcmp(a, b) < 0;
+        return Iterator();
     }
 };

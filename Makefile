@@ -1,5 +1,5 @@
 CXX = g++
-CXXFLAGS = -I./lib --std=c++11 -MMD
+CXXFLAGS = -I./lib --std=c++17 -MMD -O3
 SRC = src/main.cpp
 LIBS = $(wildcard lib/**/*.cpp)
 OBJECTS = $(SRC:.cpp=.o) $(LIBS:.cpp=.o)
