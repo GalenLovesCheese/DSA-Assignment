@@ -109,17 +109,20 @@ int main()
     {
 
         // administrator panel access
-        while(isAdmin != 1 || isAdmin != 0 && admin == false) {
+        while (isAdmin != 1 || isAdmin != 0 && admin == false)
+        {
             std::cout << "\nAccess Administrator Panel? (Enter 1 to proceed, 0 to proceed with Unprivileged Mode): ";
-            std::cin >> isAdmin;  
-            if(isAdmin == 1){
-                admin =  true;
+            std::cin >> isAdmin;
+            if (isAdmin == 1)
+            {
+                admin = true;
                 break;
             }
-            if (isAdmin == 0){
+            if (isAdmin == 0)
+            {
                 break;
             }
-        } 
+        }
 
         std::cout << "========== Movie App by Bowen & Galen ==========" << std::endl;
         std::cout << "1. Display actors between a certain age range" << std::endl;
@@ -128,7 +131,6 @@ int main()
         std::cout << "4. Display all actors in a movie" << std::endl;
         std::cout << "5. Display all actors that an actor knows" << std::endl;
         std::cout << std::endl;
-        
 
         if (admin)
         {
@@ -204,23 +206,24 @@ void user_handler(int input)
 void admin_handler(int input)
 {
     // TODO: Implement admin handler
-    switch(input){
-        
-        case 6:
-            display_add_new_actor();
-            break;
-        case 7:
-            display_add_new_movie();
-            break;
-        case 8:
-            display_add_actor_to_movie();
-            break;
-        case 9: 
-            display_update_actor_details();
-            break;
-        case 10:
-            display_update_movie_details();
-            break;
+    switch (input)
+    {
+
+    case 6:
+        display_add_new_actor();
+        break;
+    case 7:
+        display_add_new_movie();
+        break;
+    case 8:
+        display_add_actor_to_movie();
+        break;
+    case 9:
+        display_update_actor_details();
+        break;
+    case 10:
+        display_update_movie_details();
+        break;
     }
 }
 
@@ -390,7 +393,8 @@ void display_actor_relations()
     }
 }
 
-void display_add_new_actor() {
+void display_add_new_actor()
+{
     // actor details
     std::string actor_name;
     int year;
@@ -401,7 +405,8 @@ void display_add_new_actor() {
     std::getline(std::cin, actor_name);
 
     // Check if actor already exists
-    if (actor_name_index->search(actor_name.c_str())) {
+    if (actor_name_index->search(actor_name.c_str()))
+    {
         std::cout << "Actor already exists." << std::endl;
         return;
     }
@@ -412,10 +417,11 @@ void display_add_new_actor() {
     actor_id = actor_map->getSize();
 
     // make sure that ids are not duplicated
-    while(actor_map->get(actor_id)){
+    while (actor_map->get(actor_id))
+    {
         actor_id++;
     }
-    
+
     // creation of new actor object
     Actor new_actor;
     new_actor.name = new char[actor_name.length() + 1];
@@ -428,26 +434,27 @@ void display_add_new_actor() {
     actor_map->insert(actor_id, new_actor);
     actor_name_index->insert(new_actor.name, actor_id);
     actor_year_index->insert(year, actor_id);
-    
 }
-void display_add_new_movie() {
+void display_add_new_movie()
+{
     // movie details
     std::string movie_title;
     int year;
     int movie_id = 0;
 
     std::cout << "Enter title of new movie: ";
-    std::cin.ignore(); 
+    std::cin.ignore();
     std::getline(std::cin, movie_title);
     std::cout << "Enter the year of release of " << movie_title << ": ";
     std::cin >> year;
 
     // make sure that ids are not duplicated
-    while(movie_map->get(movie_id)){
-        movie_id ++;
+    while (movie_map->get(movie_id))
+    {
+        movie_id++;
     }
 
-    //creation of new movie object
+    // creation of new movie object
     Movie new_movie;
     new_movie.title = new char[movie_title.length() + 1];
     std::strcpy(new_movie.title, movie_title.c_str());
@@ -458,81 +465,91 @@ void display_add_new_movie() {
     movie_map->insert(movie_id, new_movie);
     movie_name_index->insert(new_movie.title, movie_id);
     movie_year_index->insert(new_movie.year, movie_id);
-
 }
 
-void display_add_actor_to_movie() {
+void display_add_actor_to_movie()
+{
     std::string movie_title;
     int movie_id;
-    
+
     std::cout << "Enter title of movie: ";
-    std::cin.ignore(); 
+    std::cin.ignore();
     std::getline(std::cin, movie_title);
-    
-    // search for specific movie id by title 
+
+    // search for specific movie id by title
     int *movie_id_ptr = movie_name_index->search(movie_title.c_str());
-    if (movie_id_ptr != nullptr) {
+    if (movie_id_ptr != nullptr)
+    {
         movie_id = *movie_id_ptr;
-    } else {
+    }
+    else
+    {
         std::cout << "Movie not found." << std::endl;
         return;
     }
 
     // obtain cast of movie
-    Movie* movie = movie_map->get(movie_id);
-    LinkedList<int>* actor_ids = movie->actors;
-    std::string input;    
+    Movie *movie = movie_map->get(movie_id);
+    LinkedList<int> *actor_ids = movie->actors;
+    std::string input;
 
     // add actors to movie
-    do{
+    do
+    {
         std::cout << "Please enter the name of actor to add (Enter 0 to exit): ";
         std::getline(std::cin, input);
-        if(!actor_name_index->search(input.c_str())){
+        if (!actor_name_index->search(input.c_str()))
+        {
             std::cout << "Actor does not exist." << std::endl;
         }
-        else{
+        else
+        {
             int actor_id = *actor_name_index->search(input.c_str());
-            if(actor_ids->contain(actor_id)){
-                std::cout<< "This actor is already recorded as a cast of the movie." <<std::endl;
+            if (actor_ids->contain(actor_id))
+            {
+                std::cout << "This actor is already recorded as a cast of the movie." << std::endl;
             }
-            else if(input != "0"){
-                Actor* actor = actor_map->get(actor_id);
+            else if (input != "0")
+            {
+                Actor *actor = actor_map->get(actor_id);
 
                 // add movie to actor's list of involved movies
-                LinkedList<int>* movie_ids = actor->movies;
+                LinkedList<int> *movie_ids = actor->movies;
                 movie_ids->push_back(movie_id);
-                
+
                 // add actor to movie's list of involved actors
                 actor_ids->push_back(actor_id);
             }
         }
-    } while(input != "0"); 
+    } while (input != "0");
 }
 
-//helper function prototypes for updating actor details
+// helper function prototypes for updating actor details
 void display_change_actor_name(int actor_id, std::string &actor_name);
 void display_change_add_movie(int actor_id);
 void display_change_remove_movie(int actor_id);
 void display_remove_actor(int actor_id, std::string actor_name);
 
-
-void display_update_actor_details() {
+void display_update_actor_details()
+{
     std::string actor_name;
     std::cout << "Enter the name of the actor you would like to modify: ";
 
-    std::cin.ignore(); 
+    std::cin.ignore();
     std::getline(std::cin, actor_name);
-    
-    // search for specific actor id by title 
+
+    // search for specific actor id by title
     int *actor_id_ptr = actor_name_index->search(actor_name.c_str());
-    if (actor_id_ptr == nullptr) {
+    if (actor_id_ptr == nullptr)
+    {
         std::cout << "Actor not found." << std::endl;
         return;
     }
     int actor_id = *actor_id_ptr;
 
     int input = 0;
-    do{
+    do
+    {
         // list of posisble modifications to actor record
         std::cout << "========== Modify Actor Details ==========" << std::endl;
         std::cout << "1. Change actor name" << std::endl;
@@ -545,52 +562,56 @@ void display_update_actor_details() {
         std::cout << "\nChoice (Enter '0' to quit): ";
         std::cin >> input;
 
-        if(input > 0 && input < 5){
+        if (input > 0 && input < 5)
+        {
             int actor_index;
             std::string new_actor_name;
-            switch (input){
-                case 1 :
-                    display_change_actor_name(actor_id, actor_name);
-                    break;
-                case 2:
-                    display_change_add_movie(actor_id);
-                    break;
-                case 3:
-                    display_change_remove_movie(actor_id);
-                    break;
-                case 4:
-                    display_remove_actor(actor_id, actor_name);
-                    input = 0; // break out of loop after deleting actor
-                    break;
+            switch (input)
+            {
+            case 1:
+                display_change_actor_name(actor_id, actor_name);
+                break;
+            case 2:
+                display_change_add_movie(actor_id);
+                break;
+            case 3:
+                display_change_remove_movie(actor_id);
+                break;
+            case 4:
+                display_remove_actor(actor_id, actor_name);
+                input = 0; // break out of loop after deleting actor
+                break;
             }
         }
-    } while(input != 0);
+    } while (input != 0);
 }
 
-
-//helper function prototypes for updating movie details
+// helper function prototypes for updating movie details
 void display_change_movie_title(int movie_id, std::string &movie_title);
 void display_change_add_actor(int movie_id);
 void display_change_remove_actor(int movie_id);
 void display_remove_movie(int movie_id, std::string movie_title);
 
-void display_update_movie_details() {
+void display_update_movie_details()
+{
     std::string movie_title;
     std::cout << "Enter the title of the movie you would like to modify: ";
 
-    std::cin.ignore(); 
+    std::cin.ignore();
     std::getline(std::cin, movie_title);
-    
-    // search for specific movie id by title 
+
+    // search for specific movie id by title
     int *movie_id_ptr = movie_name_index->search(movie_title.c_str());
-    if (movie_id_ptr == nullptr) {
+    if (movie_id_ptr == nullptr)
+    {
         std::cout << "Movie not found." << std::endl;
         return;
     }
     int movie_id = *movie_id_ptr;
 
     int input = 0;
-    do{
+    do
+    {
         // list of possible modifications to movie record
         std::cout << "========== Modify Movie Details ==========" << std::endl;
         std::cout << "1. Change movie title" << std::endl;
@@ -603,24 +624,26 @@ void display_update_movie_details() {
         std::cout << "\nChoice (Enter '0' to quit): ";
         std::cin >> input;
 
-        if(input > 0 && input < 5){
-            switch (input){
-                case 1 :
-                    display_change_movie_title(movie_id, movie_title);
-                    break;
-                case 2:
-                    display_change_add_actor(movie_id);
-                    break;
-                case 3:
-                    display_change_remove_actor(movie_id);
-                    break;
-                case 4:
-                    display_remove_movie(movie_id, movie_title);
-                    input = 0; // break out of loop after deleting movie
-                    break;
+        if (input > 0 && input < 5)
+        {
+            switch (input)
+            {
+            case 1:
+                display_change_movie_title(movie_id, movie_title);
+                break;
+            case 2:
+                display_change_add_actor(movie_id);
+                break;
+            case 3:
+                display_change_remove_actor(movie_id);
+                break;
+            case 4:
+                display_remove_movie(movie_id, movie_title);
+                input = 0; // break out of loop after deleting movie
+                break;
             }
         }
-    } while(input != 0);
+    } while (input != 0);
 }
 
 // ===============================
@@ -826,105 +849,119 @@ int get_year()
     return now->tm_year + 1900;
 }
 
-void display_change_actor_name(int actor_id, std::string &actor_name){
+void display_change_actor_name(int actor_id, std::string &actor_name)
+{
     std::string new_actor_name;
     std::cout << "Enter new name for " << actor_name << ": ";
-    std::cin.ignore(); 
+    std::cin.ignore();
     std::getline(std::cin, new_actor_name);
-    //obtain actor_index
+    // obtain actor_index
     int actor_index = actor_id;
     // update actor name
     Actor updated_actor = *actor_map->get(actor_index);
     updated_actor.name = new char[new_actor_name.length() + 1];
     std::strcpy(updated_actor.name, new_actor_name.c_str());
-    
+
     // update main actor hashmap
     actor_map->insert(actor_index, updated_actor);
 
-    //update actor index
+    // update actor index
     actor_name_index->insert(new_actor_name.c_str(), actor_index);
     actor_name_index->remove(actor_name.c_str());
     actor_name_index->insert(updated_actor.name, actor_index);
 }
 
-void display_change_add_movie(int actor_id){
+void display_change_add_movie(int actor_id)
+{
 
-    // obtain actor movie list to add to 
-    Actor* actor = actor_map->get(actor_id);
-    LinkedList<int>* actor_movies = actor->movies;
+    // obtain actor movie list to add to
+    Actor *actor = actor_map->get(actor_id);
+    LinkedList<int> *actor_movies = actor->movies;
 
     std::string movie_title;
     std::cin.ignore(); // ignore any leftover newline character in the input buffer
-    do{
+    do
+    {
         std::cout << "Enter title of movie to add (Enter 0 to exit): ";
         std::getline(std::cin, movie_title);
-        
-        // search for specific movie id by title 
-        if(movie_title != "0"){
+
+        // search for specific movie id by title
+        if (movie_title != "0")
+        {
             int *movie_id_ptr = movie_name_index->search(movie_title.c_str());
-            if (movie_id_ptr != nullptr) {
+            if (movie_id_ptr != nullptr)
+            {
                 int movie_id = *movie_id_ptr;
 
                 // modify movie list to reflect actor involvement
-                Movie* movie = movie_map->get(movie_id);
-                LinkedList<int>* actor_list = movie->actors;
+                Movie *movie = movie_map->get(movie_id);
+                LinkedList<int> *actor_list = movie->actors;
 
                 // check if actor is already involved in movie
-                if(actor_list->contain(actor_id)){
-                    std::cout<< "This actor is already recorded as a cast of the movie." <<std::endl;
+                if (actor_list->contain(actor_id))
+                {
+                    std::cout << "This actor is already recorded as a cast of the movie." << std::endl;
                     return;
                 }
-                
+
                 actor_movies->push_back(movie_id);
                 actor_list->push_back(actor_id);
-
-            } else{
+            }
+            else
+            {
                 std::cout << "Movie not found." << std::endl;
             }
         }
-        
-    } while(movie_title != "0");
+
+    } while (movie_title != "0");
 }
 
-void display_change_remove_movie(int actor_id){
-    // obtain actor movie list to remove from 
-    Actor* actor = actor_map->get(actor_id);
-    LinkedList<int>* actor_movies = actor->movies;
+void display_change_remove_movie(int actor_id)
+{
+    // obtain actor movie list to remove from
+    Actor *actor = actor_map->get(actor_id);
+    LinkedList<int> *actor_movies = actor->movies;
 
     std::string movie_title;
     std::cin.ignore(); // ignore any leftover newline character in the input buffer
-    do{
+    do
+    {
         std::cout << "Enter title of movie to remove (Enter 0 to exit): ";
         std::getline(std::cin, movie_title);
-        
-        // search for specific movie id by title 
-        if(movie_title != "0"){
+
+        // search for specific movie id by title
+        if (movie_title != "0")
+        {
             int *movie_id_ptr = movie_name_index->search(movie_title.c_str());
-            if (movie_id_ptr != nullptr) {
+            if (movie_id_ptr != nullptr)
+            {
                 int movie_id = *movie_id_ptr;
 
                 // modify movie list to reflect actor removal
-                Movie* movie = movie_map->get(movie_id);
-                LinkedList<int>* actor_list = movie->actors;
+                Movie *movie = movie_map->get(movie_id);
+                LinkedList<int> *actor_list = movie->actors;
 
                 // check if actor is involved in movie
-                if(!actor_list->contain(actor_id)){
-                    std::cout<< "This actor is not recorded as a cast of the movie." <<std::endl;
+                if (!actor_list->contain(actor_id))
+                {
+                    std::cout << "This actor is not recorded as a cast of the movie." << std::endl;
                     return;
                 }
-                
+
                 actor_movies->remove(movie_id);
                 actor_list->remove(actor_id);
-
-            } else{
+            }
+            else
+            {
                 std::cout << "Movie not found." << std::endl;
             }
         }
-        
-    } while(movie_title != "0");
+
+    } while (movie_title != "0");
 }
 
-void display_remove_actor(int actor_id, std::string actor_name) {
+void display_remove_actor(int actor_id, std::string actor_name)
+{
     // Remove actor from actor_map
     actor_map->remove(actor_id);
 
@@ -932,23 +969,24 @@ void display_remove_actor(int actor_id, std::string actor_name) {
     actor_name_index->remove(actor_name.c_str());
 
     // Remove actor from actor_year_index
-    Actor* actor = actor_map->get(actor_id);
+    Actor *actor = actor_map->get(actor_id);
     actor_year_index->remove(actor->year);
 
     // Remove actor from all movies they are associated with
-    LinkedList<int>* actor_movies = actor->movies;
-    for (auto it = actor_movies->begin(); it != actor_movies->end(); ++it) {
-        Movie* movie = movie_map->get(*it);
+    LinkedList<int> *actor_movies = actor->movies;
+    for (auto it = actor_movies->begin(); it != actor_movies->end(); ++it)
+    {
+        Movie *movie = movie_map->get(*it);
         movie->actors->remove(actor_id);
     }
 
     // Free memory allocated for actor name
     delete[] actor->name;
     delete actor_movies;
-
 }
 
-void display_change_movie_title(int movie_id, std::string &movie_title) {
+void display_change_movie_title(int movie_id, std::string &movie_title)
+{
     std::string new_movie_title;
     std::cout << "Enter new title for " << movie_title << ": ";
     std::cin.ignore();
@@ -969,37 +1007,43 @@ void display_change_movie_title(int movie_id, std::string &movie_title) {
     movie_title = new_movie_title;
 }
 
-void display_change_add_actor(int movie_id) {
+void display_change_add_actor(int movie_id)
+{
     // Obtain movie actor list to add to
-    Movie* movie = movie_map->get(movie_id);
-    LinkedList<int>* movie_actors = movie->actors;
+    Movie *movie = movie_map->get(movie_id);
+    LinkedList<int> *movie_actors = movie->actors;
 
     std::string actor_name;
     std::cin.ignore();
-    do {
+    do
+    {
         std::cout << "Enter name of actor to add (Enter 0 to exit): ";
         std::getline(std::cin, actor_name);
 
         // Search for specific actor id by name
-        if (actor_name != "0") {
-            int* actor_id_ptr = actor_name_index->search(actor_name.c_str());
-            if (actor_id_ptr != nullptr) {
+        if (actor_name != "0")
+        {
+            int *actor_id_ptr = actor_name_index->search(actor_name.c_str());
+            if (actor_id_ptr != nullptr)
+            {
                 int actor_id = *actor_id_ptr;
 
                 // Modify actor list to reflect movie involvement
-                Actor* actor = actor_map->get(actor_id);
-                LinkedList<int>* movie_list = actor->movies;
+                Actor *actor = actor_map->get(actor_id);
+                LinkedList<int> *movie_list = actor->movies;
 
                 // Check if actor is already involved in movie
-                if (movie_actors->contain(actor_id)) {
+                if (movie_actors->contain(actor_id))
+                {
                     std::cout << "This actor is already recorded as a cast of the movie." << std::endl;
                     return;
                 }
 
                 movie_actors->push_back(actor_id);
                 movie_list->push_back(movie_id);
-
-            } else {
+            }
+            else
+            {
                 std::cout << "Actor not found." << std::endl;
             }
         }
@@ -1007,37 +1051,43 @@ void display_change_add_actor(int movie_id) {
     } while (actor_name != "0");
 }
 
-void display_change_remove_actor(int movie_id) {
+void display_change_remove_actor(int movie_id)
+{
     // Obtain movie actor list to remove from
-    Movie* movie = movie_map->get(movie_id);
-    LinkedList<int>* movie_actors = movie->actors;
+    Movie *movie = movie_map->get(movie_id);
+    LinkedList<int> *movie_actors = movie->actors;
 
     std::string actor_name;
     std::cin.ignore();
-    do {
+    do
+    {
         std::cout << "Enter name of actor to remove (Enter 0 to exit): ";
         std::getline(std::cin, actor_name);
 
         // Search for specific actor id by name
-        if (actor_name != "0") {
-            int* actor_id_ptr = actor_name_index->search(actor_name.c_str());
-            if (actor_id_ptr != nullptr) {
+        if (actor_name != "0")
+        {
+            int *actor_id_ptr = actor_name_index->search(actor_name.c_str());
+            if (actor_id_ptr != nullptr)
+            {
                 int actor_id = *actor_id_ptr;
 
                 // Modify actor list to reflect actor removal
-                Actor* actor = actor_map->get(actor_id);
-                LinkedList<int>* movie_list = actor->movies;
+                Actor *actor = actor_map->get(actor_id);
+                LinkedList<int> *movie_list = actor->movies;
 
                 // Check if actor is involved in movie
-                if (!movie_actors->contain(actor_id)) {
+                if (!movie_actors->contain(actor_id))
+                {
                     std::cout << "This actor is not recorded as a cast of the movie." << std::endl;
                     return;
                 }
 
                 movie_actors->remove(actor_id);
                 movie_list->remove(movie_id);
-
-            } else {
+            }
+            else
+            {
                 std::cout << "Actor not found." << std::endl;
             }
         }
@@ -1045,7 +1095,8 @@ void display_change_remove_actor(int movie_id) {
     } while (actor_name != "0");
 }
 
-void display_remove_movie(int movie_id, std::string movie_title) {
+void display_remove_movie(int movie_id, std::string movie_title)
+{
     // Remove movie from movie_map
     movie_map->remove(movie_id);
 
@@ -1053,13 +1104,14 @@ void display_remove_movie(int movie_id, std::string movie_title) {
     movie_name_index->remove(movie_title.c_str());
 
     // Remove movie from movie_year_index
-    Movie* movie = movie_map->get(movie_id);
+    Movie *movie = movie_map->get(movie_id);
     movie_year_index->remove(movie->year);
 
     // Remove movie from all actors associated with it
-    LinkedList<int>* movie_actors = movie->actors;
-    for (auto it = movie_actors->begin(); it != movie_actors->end(); ++it) {
-        Actor* actor = actor_map->get(*it);
+    LinkedList<int> *movie_actors = movie->actors;
+    for (auto it = movie_actors->begin(); it != movie_actors->end(); ++it)
+    {
+        Actor *actor = actor_map->get(*it);
         actor->movies->remove(movie_id);
     }
 
