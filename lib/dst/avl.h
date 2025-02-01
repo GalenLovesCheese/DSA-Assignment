@@ -1,5 +1,4 @@
 #include <iostream>
-using namespace std;
 
 // Template class for AVLNode
 template <typename T>
@@ -47,8 +46,8 @@ private:
         newRoot->right = current;       // assign new right node to be previous root node
 
         // update heights
-        current->height = 1 + max(height(current->left), height(current->right));
-        newRoot->height = 1 + max(height(newRoot->left), height(newRoot->right));
+        current->height = 1 + std::max(height(current->left), height(current->right));
+        newRoot->height = 1 + std::max(height(newRoot->left), height(newRoot->right));
 
         return newRoot;
     }
@@ -61,8 +60,8 @@ private:
         newRoot->left = current;
 
         // update heights
-        current->height = 1 + max(height(current->left), height(current->right));
-        newRoot->height = 1 + max(height(newRoot->left), height(newRoot->right));
+        current->height = 1 + std::max(height(current->left), height(current->right));
+        newRoot->height = 1 + std::max(height(newRoot->left), height(newRoot->right));
 
         return newRoot;
     }
@@ -114,7 +113,7 @@ private:
             return current; // Duplicate keys are not allowed
         }
 
-        current->height = 1 + max(height(current->left), height(current->right));
+        current->height = 1 + std::max(height(current->left), height(current->right));
         int balanceFactor = getBalance(current);
 
         // left-left-case
@@ -208,15 +207,14 @@ private:
         {
             return node;
         }
-
+      
         // update height of the current node
-        node->height = 1 + max(height(node->left), height(node->right));
+        node->height = 1 + std::max(height(node->left), height(node->right));
 
         // obtain balance factor if node
         int balanceFactor = getBalance(node);
 
         // handle unbalanced tree after deletion
-
         // left-left-case
         if (balanceFactor > 1 && getBalance(node->left) >= 0)
         {
@@ -246,16 +244,6 @@ private:
         return node;
     }
 
-    void inorder(Node *avlRoot)
-    {
-        if (avlRoot != nullptr)
-        {
-            inorder(avlRoot->left);
-            cout << avlRoot->key << " ";
-            inorder(avlRoot->right);
-        }
-    }
-
 public:
     // avltree constructor
     AVLTree() : root(nullptr) {}
@@ -268,12 +256,6 @@ public:
     void deleteNode(T key)
     {
         root = deleteNode(root, key);
-    }
-
-    void printInorder()
-    {
-        inorder(root);
-        cout << endl;
     }
 
     class Iterator
