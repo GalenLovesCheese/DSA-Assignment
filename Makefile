@@ -6,7 +6,7 @@ OBJECTS = $(SRC:.cpp=.o) $(LIBS:.cpp=.o)
 DEPFILES = $(OBJECTS:.o=.d)
 TARGET = movieApp
 
-.PHONY: debug_vsc debug run clean debug-run-large-dataset
+.PHONY: debug_vsc debug run clean large-dataset
 
 $(TARGET): $(OBJECTS)
 	$(CXX) $(CXXFLAGS) $^ -o $@
