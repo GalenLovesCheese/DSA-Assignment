@@ -63,30 +63,30 @@ int main()
     clock_t original_start = clock();
     clock_t start = clock();
 
-    // Load data from CSV files
-    #ifdef LARGE
+// Load data from CSV files
+#ifdef LARGE
     actors = CSVParser::Parse<Actor>("data/actors-large.csv", &actor_count);
-    #else
+#else
     actors = CSVParser::Parse<Actor>("data/actors-demo.csv", &actor_count);
-    #endif // LARGE
+#endif // LARGE
     DEBUG_PRINTF("Loaded %zu actors in %.2f seconds\n", actor_count,
                  (double)(clock() - start) / CLOCKS_PER_SEC);
 
     start = clock();
-    #ifdef LARGE
+#ifdef LARGE
     movies = CSVParser::Parse<Movie>("data/movies-large.csv", &movie_count);
-    #else
+#else
     movies = CSVParser::Parse<Movie>("data/movies-demo.csv", &movie_count);
-    #endif // LARGE
+#endif // LARGE
     DEBUG_PRINTF("Loaded %zu movies in %.2f seconds\n", movie_count,
                  (double)(clock() - start) / CLOCKS_PER_SEC);
 
     start = clock();
-    #ifdef LARGE
+#ifdef LARGE
     actor_movies_csv = CSVParser::Parse<ActorMovie>("data/cast-large.csv", &actor_movie_count);
-    #else
+#else
     actor_movies_csv = CSVParser::Parse<ActorMovie>("data/cast-demo.csv", &actor_movie_count);
-    #endif // LARGE
+#endif // LARGE
     DEBUG_PRINTF("Loaded %zu cast relations in %.2f seconds\n", actor_movie_count,
                  (double)(clock() - start) / CLOCKS_PER_SEC);
 
