@@ -205,7 +205,6 @@ void user_handler(int input)
 
 void admin_handler(int input)
 {
-    // TODO: Implement admin handler
     switch (input)
     {
 
