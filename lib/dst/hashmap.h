@@ -2,6 +2,7 @@
 #define HASHMAP_H
 
 #include "dst/linkedlist.h"
+#include <cstdint>
 
 template <typename K, typename V>
 class HashMap
