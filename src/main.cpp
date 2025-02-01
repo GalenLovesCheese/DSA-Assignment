@@ -165,9 +165,6 @@ int main()
         std::cout << std::endl;
     } while (input != 0);
 
-    // DO NOT REMOVE: Free up the memory
-    CSVParser::FreeResults(actors, actor_count);
-    CSVParser::FreeResults(movies, movie_count);
     return 0;
 }
 
@@ -729,14 +726,30 @@ void populate_main_hashmap()
     for (size_t i = 0; i < actor_count; i++)
     {
         Actor *actor = &actors[i];
-        actor->movies = actor_movies->get(actor->id);
+        LinkedList<int> *actor_movie = actor_movies->get(actor->id);
+        if (actor_movie == nullptr)
+        {
+            actor->movies = new LinkedList<int>();
+        }
+        else
+        {
+            actor->movies = actor_movie;
+        }
         actor_map->insert(actor->id, *actor);
     }
 
     for (size_t i = 0; i < movie_count; i++)
     {
         Movie *movie = &movies[i];
-        movie->actors = movie_actors->get(movie->id);
+        LinkedList<int> *movie_actor = movie_actors->get(movie->id);
+        if (movie_actor == nullptr)
+        {
+            movie->actors = new LinkedList<int>();
+        }
+        else
+        {
+            movie->actors = movie_actor;
+        }
         movie_map->insert(movie->id, *movie);
     }
 }
@@ -981,7 +994,7 @@ void display_remove_actor(int actor_id, std::string actor_name)
 
     // Free memory allocated for actor name
     delete[] actor->name;
-    delete actor_movies;
+    // delete actor_movies;
 }
 
 void display_change_movie_title(int movie_id, std::string &movie_title)
@@ -1116,5 +1129,5 @@ void display_remove_movie(int movie_id, std::string movie_title)
 
     // Free memory allocated for movie title
     delete[] movie->title;
-    delete movie_actors;
+    // delete movie_actors;
 }
