@@ -207,15 +207,14 @@ private:
         {
             return node;
         }
-
+      
         // update height of the current node
-        node->height = 1 + max(height(node->left), height(node->right));
+        node->height = 1 + std::max(height(node->left), height(node->right));
 
         // obtain balance factor if node
         int balanceFactor = getBalance(node);
 
         // handle unbalanced tree after deletion
-
         // left-left-case
         if (balanceFactor > 1 && getBalance(node->left) >= 0)
         {
