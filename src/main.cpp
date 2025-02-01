@@ -6,7 +6,7 @@
 
 #include "dst/bplustree.h"
 #include "dst/hashmap.h"
-#include "dst/avl.h"
+#include "dst/avl2.h"
 
 #include "classes/actor.h"
 #include "classes/movie.h"
@@ -260,17 +260,15 @@ void display_actor_movies()
         Movie *movie = movie_map->get(*it);
         std::string movie_name = movie->title;
         movie_name += " (" + std::to_string(movie->year) + ")";
-        movie_names->insert(movie_name);
+        movie_names->insertNode(movie_name);
     }
 
     std::cout << "Movies starring " << name << ":" << std::endl;
     int i = 1;
-    auto it = movie_names->begin();
-    while (it.has_next())
+    for (auto it = movie_names->begin(); it != movie_names->end(); ++it)
     {
         std::cout << i << ". " << *it << std::endl;
         i++;
-        ++it;
     }
 }
 
@@ -303,17 +301,15 @@ void display_movie_actors()
         Actor *actor = actor_map->get(*it);
         std::string actor_name = actor->name;
         actor_name += " (" + std::to_string(actor->year) + ")";
-        actor_names->insert(actor_name);
+        actor_names->insertNode(actor_name);
     }
 
     std::cout << "Actors in " << title << ":" << std::endl;
     int i = 1;
-    auto it = actor_names->begin();
-    while (it.has_next())
+    for (auto it = actor_names->begin(); it != actor_names->end(); ++it)
     {
         std::cout << i << ". " << *it << std::endl;
         i++;
-        ++it;
     }
 }
 
@@ -347,12 +343,10 @@ void display_actor_relations()
 
     std::cout << "Actors who have worked with " << actor_name << ":" << std::endl;
     int i = 1;
-    auto it = actor_names->begin();
-    while (it.has_next())
+    for (auto it = actor_names->begin(); it != actor_names->end(); ++it)
     {
         std::cout << i << ". " << *it << std::endl;
         i++;
-        ++it;
     }
 }
 
@@ -388,16 +382,14 @@ AVLTree<std::string> *get_actor_relations(int actor_id, int depth, const std::st
                 // Skip if it's the original actor or already visited
                 if (actor_name != original_name)
                 {
-                    actor_names->insert(actor_name);
+                    actor_names->insertNode(actor_name);
 
                     AVLTree<std::string> *deeper_relations = get_actor_relations(*it2, depth - 1, original_name);
                     if (deeper_relations != nullptr)
                     {
-                        auto deeper_it = deeper_relations->begin();
-                        while (deeper_it.has_next())
+                        for (auto deeper_it = deeper_relations->begin(); deeper_it != deeper_relations->end(); ++deeper_it)
                         {
-                            actor_names->insert(*deeper_it);
-                            ++deeper_it;
+                            actor_names->insertNode(*deeper_it);
                         }
                         delete deeper_relations;
                     }
