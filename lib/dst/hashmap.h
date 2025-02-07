@@ -140,19 +140,17 @@ public:
         // Iterate through the linked list
         auto it = table[index].begin();
         auto end = table[index].end();
-        int pos = 0;
 
         while (it != end)
         {
-            if ((*it).key == key)
+            if (it->key == key)
             {
-                // Remove the entry (this would require modifying the LinkedList class)
-                // Placeholder: you'd need to implement a remove method in LinkedList
+                // Remove the entry using the remove method of LinkedList
+                table[index].remove(*it);
                 --size;
                 return true;
             }
             ++it;
-            ++pos;
         }
 
         return false;
