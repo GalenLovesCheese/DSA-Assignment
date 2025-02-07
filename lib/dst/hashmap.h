@@ -14,6 +14,10 @@ private:
         K key;
         V value;
         Entry(const K &k, const V &v) : key(k), value(v) {}
+
+        bool operator==(const Entry &other) const {
+            return key == other.key;
+        }
     };
 
     // Array of linked lists for collision resolution
@@ -131,28 +135,23 @@ public:
 
         return nullptr;
     }
-
     // Remove a key-value pair
     bool remove(const K &key)
     {
         unsigned int index = hash(key);
-
-        // Iterate through the linked list
-        auto it = table[index].begin();
-        auto end = table[index].end();
-
-        while (it != end)
+    
+        // Search through the linked list at this index
+        for (auto &entry : table[index])
         {
-            if (it->key == key)
+            if (entry.key == key)
             {
-                // Remove the entry using the remove method of LinkedList
-                table[index].remove(*it);
+                // Use the LinkedList's remove method directly with the entry
+                table[index].remove(entry);
                 --size;
                 return true;
             }
-            ++it;
         }
-
+    
         return false;
     }
 

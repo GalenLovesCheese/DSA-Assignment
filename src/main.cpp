@@ -255,6 +255,10 @@ void display_actor_age_range()
     while (it.has_next())
     {
         Actor *actor = actor_map->get(*it.next());
+        if (actor == nullptr)
+        {
+            continue;
+        }
         std::cout << i << ". " << actor->name << " (" << actor->year << ")" << std::endl;
         i++;
     }
@@ -277,6 +281,10 @@ void display_recent_movies()
     while (it.has_next())
     {
         Movie *movie = movie_map->get(*it.next());
+        if (movie == nullptr)
+        {
+            continue;
+        }
         std::cout << i << ". " << movie->title << " (" << movie->year << ")" << std::endl;
         i++;
     }
@@ -986,9 +994,6 @@ void display_change_remove_movie(int actor_id)
 
 void display_remove_actor(int actor_id, std::string actor_name)
 {
-    // Remove actor from actor_map
-    actor_map->remove(actor_id);
-
     // Remove actor from actor_name_index
     actor_name_index->remove(actor_name.c_str());
 
@@ -1003,6 +1008,9 @@ void display_remove_actor(int actor_id, std::string actor_name)
         Movie *movie = movie_map->get(*it);
         movie->actors->remove(actor_id);
     }
+
+    // Remove actor from actor_map
+    actor_map->remove(actor_id);
 
     // Free memory allocated for actor name
     delete[] actor->name;
@@ -1121,9 +1129,6 @@ void display_change_remove_actor(int movie_id)
 
 void display_remove_movie(int movie_id, std::string movie_title)
 {
-    // Remove movie from movie_map
-    movie_map->remove(movie_id);
-
     // Remove movie from movie_name_index
     movie_name_index->remove(movie_title.c_str());
 
@@ -1138,6 +1143,9 @@ void display_remove_movie(int movie_id, std::string movie_title)
         Actor *actor = actor_map->get(*it);
         actor->movies->remove(movie_id);
     }
+
+    // Remove movie from movie_map
+    movie_map->remove(movie_id);
 
     // Free memory allocated for movie title
     delete[] movie->title;
