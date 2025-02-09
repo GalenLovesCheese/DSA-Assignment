@@ -985,6 +985,10 @@ void display_change_remove_movie(int actor_id)
 
 void display_remove_actor(int actor_id, std::string actor_name)
 {
+    // Retrieve actor and their movies
+    Actor *actor = actor_map->get(actor_id);
+    LinkedList<int> *actor_movies = actor->movies;
+
     // Remove actor from actor_map
     actor_map->remove(actor_id);
 
@@ -992,11 +996,9 @@ void display_remove_actor(int actor_id, std::string actor_name)
     actor_name_index->remove(actor_name.c_str());
 
     // Remove actor from actor_year_index
-    Actor *actor = actor_map->get(actor_id);
     actor_year_index->remove(actor->year);
 
     // Remove actor from all movies they are associated with
-    LinkedList<int> *actor_movies = actor->movies;
     for (auto it = actor_movies->begin(); it != actor_movies->end(); ++it)
     {
         Movie *movie = movie_map->get(*it);
@@ -1005,7 +1007,7 @@ void display_remove_actor(int actor_id, std::string actor_name)
 
     // Free memory allocated for actor name
     delete[] actor->name;
-    // delete actor_movies;
+    delete actor_movies;
 }
 
 void display_change_movie_title(int movie_id, std::string &movie_title)
@@ -1120,6 +1122,8 @@ void display_change_remove_actor(int movie_id)
 
 void display_remove_movie(int movie_id, std::string movie_title)
 {
+    Movie *movie = movie_map->get(movie_id);
+
     // Remove movie from movie_map
     movie_map->remove(movie_id);
 
@@ -1127,7 +1131,6 @@ void display_remove_movie(int movie_id, std::string movie_title)
     movie_name_index->remove(movie_title.c_str());
 
     // Remove movie from movie_year_index
-    Movie *movie = movie_map->get(movie_id);
     movie_year_index->remove(movie->year);
 
     // Remove movie from all actors associated with it
@@ -1140,5 +1143,5 @@ void display_remove_movie(int movie_id, std::string movie_title)
 
     // Free memory allocated for movie title
     delete[] movie->title;
-    // delete movie_actors;
+    delete movie_actors;
 }
